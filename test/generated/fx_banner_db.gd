@@ -15,6 +15,16 @@ static func query(db: Db) -> Query:
     return Query.new(db.select(FxBanner))
 
 
+## Changes matching [FxBanner] rows: set fields, add conditions, then execute().
+static func update(db: Db) -> Update:
+    return Update.new(db.update_all(FxBanner))
+
+
+## Deletes matching [FxBanner] rows: add conditions, then execute().
+static func delete(db: Db) -> Delete:
+    return Delete.new(db.delete_all(FxBanner))
+
+
 ## Column names of [FxBanner].
 class Field:
     const ID: StringName = &"id"
@@ -29,8 +39,8 @@ class Query:
     var _query: DbQuery
 
 
-    func _init(db_query: DbQuery) -> void:
-        _query = db_query
+    func _init(wrapped: DbQuery) -> void:
+        _query = wrapped
 
 
     func where_id(op: String, value: int) -> Query:
@@ -45,6 +55,11 @@ class Query:
 
     func where_id_in(values: Array[int]) -> Query:
         _query.where_in(Field.ID, values)
+        return self
+
+
+    func or_where_id_in(values: Array[int]) -> Query:
+        _query.or_where_in(Field.ID, values)
         return self
 
 
@@ -84,6 +99,11 @@ class Query:
         return self
 
 
+    func or_where_hero_id_in(values: Array[String]) -> Query:
+        _query.or_where_in(Field.HERO_ID, values)
+        return self
+
+
     func where_hero_id_not_in(values: Array[String]) -> Query:
         _query.where_not_in(Field.HERO_ID, values)
         return self
@@ -112,6 +132,11 @@ class Query:
 
     func where_motto_in(values: Array[String]) -> Query:
         _query.where_in(Field.MOTTO, values)
+        return self
+
+
+    func or_where_motto_in(values: Array[String]) -> Query:
+        _query.or_where_in(Field.MOTTO, values)
         return self
 
 
@@ -181,3 +206,260 @@ class Query:
     ## The untyped query underneath, for what this class does not cover.
     func db_query() -> DbQuery:
         return _query
+
+
+## Changes every matching [FxBanner] row, made by update(). See [DbUpdate].
+class Update:
+    extends RefCounted
+
+    var _update: DbUpdate
+
+
+    func _init(wrapped: DbUpdate) -> void:
+        _update = wrapped
+
+
+    func set_id(value: int) -> Update:
+        _update.set_field(Field.ID, value)
+        return self
+
+
+    func set_hero_id(value: String) -> Update:
+        _update.set_field(Field.HERO_ID, value)
+        return self
+
+
+    func set_motto(value: String) -> Update:
+        _update.set_field(Field.MOTTO, value)
+        return self
+
+
+    func where_id(op: String, value: int) -> Update:
+        _update.where(Field.ID, op, value)
+        return self
+
+
+    func or_where_id(op: String, value: int) -> Update:
+        _update.or_where(Field.ID, op, value)
+        return self
+
+
+    func where_id_in(values: Array[int]) -> Update:
+        _update.where_in(Field.ID, values)
+        return self
+
+
+    func or_where_id_in(values: Array[int]) -> Update:
+        _update.or_where_in(Field.ID, values)
+        return self
+
+
+    func where_id_not_in(values: Array[int]) -> Update:
+        _update.where_not_in(Field.ID, values)
+        return self
+
+
+    func where_id_between(low: int, high: int) -> Update:
+        _update.where_between(Field.ID, low, high)
+        return self
+
+
+    func where_hero_id(op: String, value: String) -> Update:
+        _update.where(Field.HERO_ID, op, value)
+        return self
+
+
+    func or_where_hero_id(op: String, value: String) -> Update:
+        _update.or_where(Field.HERO_ID, op, value)
+        return self
+
+
+    func where_hero_id_in(values: Array[String]) -> Update:
+        _update.where_in(Field.HERO_ID, values)
+        return self
+
+
+    func or_where_hero_id_in(values: Array[String]) -> Update:
+        _update.or_where_in(Field.HERO_ID, values)
+        return self
+
+
+    func where_hero_id_not_in(values: Array[String]) -> Update:
+        _update.where_not_in(Field.HERO_ID, values)
+        return self
+
+
+    func where_motto(op: String, value: String) -> Update:
+        _update.where(Field.MOTTO, op, value)
+        return self
+
+
+    func or_where_motto(op: String, value: String) -> Update:
+        _update.or_where(Field.MOTTO, op, value)
+        return self
+
+
+    func where_motto_in(values: Array[String]) -> Update:
+        _update.where_in(Field.MOTTO, values)
+        return self
+
+
+    func or_where_motto_in(values: Array[String]) -> Update:
+        _update.or_where_in(Field.MOTTO, values)
+        return self
+
+
+    func where_motto_not_in(values: Array[String]) -> Update:
+        _update.where_not_in(Field.MOTTO, values)
+        return self
+
+
+    func where_group(body: Callable) -> Update:
+        _update.where_group(body)
+        return self
+
+
+    func or_where_group(body: Callable) -> Update:
+        _update.or_where_group(body)
+        return self
+
+
+    func where_raw(sql: String, args: Array = []) -> Update:
+        _update.where_raw(sql, args)
+        return self
+
+
+    ## Allows running without conditions, changing every row.
+    func all_rows() -> Update:
+        _update.all_rows()
+        return self
+
+
+    ## Runs the update. Returns how many rows changed, or -1 on failure.
+    func execute() -> int:
+        return _update.execute()
+
+
+    func db_update() -> DbUpdate:
+        return _update
+
+
+## Deletes every matching [FxBanner] row, made by delete(). See [DbDelete].
+class Delete:
+    extends RefCounted
+
+    var _delete: DbDelete
+
+
+    func _init(wrapped: DbDelete) -> void:
+        _delete = wrapped
+
+
+    func where_id(op: String, value: int) -> Delete:
+        _delete.where(Field.ID, op, value)
+        return self
+
+
+    func or_where_id(op: String, value: int) -> Delete:
+        _delete.or_where(Field.ID, op, value)
+        return self
+
+
+    func where_id_in(values: Array[int]) -> Delete:
+        _delete.where_in(Field.ID, values)
+        return self
+
+
+    func or_where_id_in(values: Array[int]) -> Delete:
+        _delete.or_where_in(Field.ID, values)
+        return self
+
+
+    func where_id_not_in(values: Array[int]) -> Delete:
+        _delete.where_not_in(Field.ID, values)
+        return self
+
+
+    func where_id_between(low: int, high: int) -> Delete:
+        _delete.where_between(Field.ID, low, high)
+        return self
+
+
+    func where_hero_id(op: String, value: String) -> Delete:
+        _delete.where(Field.HERO_ID, op, value)
+        return self
+
+
+    func or_where_hero_id(op: String, value: String) -> Delete:
+        _delete.or_where(Field.HERO_ID, op, value)
+        return self
+
+
+    func where_hero_id_in(values: Array[String]) -> Delete:
+        _delete.where_in(Field.HERO_ID, values)
+        return self
+
+
+    func or_where_hero_id_in(values: Array[String]) -> Delete:
+        _delete.or_where_in(Field.HERO_ID, values)
+        return self
+
+
+    func where_hero_id_not_in(values: Array[String]) -> Delete:
+        _delete.where_not_in(Field.HERO_ID, values)
+        return self
+
+
+    func where_motto(op: String, value: String) -> Delete:
+        _delete.where(Field.MOTTO, op, value)
+        return self
+
+
+    func or_where_motto(op: String, value: String) -> Delete:
+        _delete.or_where(Field.MOTTO, op, value)
+        return self
+
+
+    func where_motto_in(values: Array[String]) -> Delete:
+        _delete.where_in(Field.MOTTO, values)
+        return self
+
+
+    func or_where_motto_in(values: Array[String]) -> Delete:
+        _delete.or_where_in(Field.MOTTO, values)
+        return self
+
+
+    func where_motto_not_in(values: Array[String]) -> Delete:
+        _delete.where_not_in(Field.MOTTO, values)
+        return self
+
+
+    func where_group(body: Callable) -> Delete:
+        _delete.where_group(body)
+        return self
+
+
+    func or_where_group(body: Callable) -> Delete:
+        _delete.or_where_group(body)
+        return self
+
+
+    func where_raw(sql: String, args: Array = []) -> Delete:
+        _delete.where_raw(sql, args)
+        return self
+
+
+    ## Allows running without conditions, deleting every row.
+    func all_rows() -> Delete:
+        _delete.all_rows()
+        return self
+
+
+    ## Runs the delete. Returns how many rows were deleted, or -1 on failure.
+    func execute() -> int:
+        return _delete.execute()
+
+
+    func db_delete() -> DbDelete:
+        return _delete

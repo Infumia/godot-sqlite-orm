@@ -15,6 +15,16 @@ static func query(db: Db) -> Query:
     return Query.new(db.select(FxPerson))
 
 
+## Changes matching [FxPerson] rows: set fields, add conditions, then execute().
+static func update(db: Db) -> Update:
+    return Update.new(db.update_all(FxPerson))
+
+
+## Deletes matching [FxPerson] rows: add conditions, then execute().
+static func delete(db: Db) -> Delete:
+    return Delete.new(db.delete_all(FxPerson))
+
+
 ## Column names of [FxPerson].
 class Field:
     const ID: StringName = &"id"
@@ -30,8 +40,8 @@ class Query:
     var _query: DbQuery
 
 
-    func _init(db_query: DbQuery) -> void:
-        _query = db_query
+    func _init(wrapped: DbQuery) -> void:
+        _query = wrapped
 
 
     func where_id(op: String, value: int) -> Query:
@@ -46,6 +56,11 @@ class Query:
 
     func where_id_in(values: Array[int]) -> Query:
         _query.where_in(Field.ID, values)
+        return self
+
+
+    func or_where_id_in(values: Array[int]) -> Query:
+        _query.or_where_in(Field.ID, values)
         return self
 
 
@@ -85,6 +100,11 @@ class Query:
         return self
 
 
+    func or_where_name_in(values: Array[String]) -> Query:
+        _query.or_where_in(Field.NAME, values)
+        return self
+
+
     func where_name_not_in(values: Array[String]) -> Query:
         _query.where_not_in(Field.NAME, values)
         return self
@@ -113,6 +133,11 @@ class Query:
 
     func where_surname_in(values: Array[String]) -> Query:
         _query.where_in(Field.SURNAME, values)
+        return self
+
+
+    func or_where_surname_in(values: Array[String]) -> Query:
+        _query.or_where_in(Field.SURNAME, values)
         return self
 
 
@@ -159,6 +184,11 @@ class Query:
 
     func where_government_id_in(values: Array[String]) -> Query:
         _query.where_in(Field.GOVERNMENT_ID, values)
+        return self
+
+
+    func or_where_government_id_in(values: Array[String]) -> Query:
+        _query.or_where_in(Field.GOVERNMENT_ID, values)
         return self
 
 
@@ -228,3 +258,350 @@ class Query:
     ## The untyped query underneath, for what this class does not cover.
     func db_query() -> DbQuery:
         return _query
+
+
+## Changes every matching [FxPerson] row, made by update(). See [DbUpdate].
+class Update:
+    extends RefCounted
+
+    var _update: DbUpdate
+
+
+    func _init(wrapped: DbUpdate) -> void:
+        _update = wrapped
+
+
+    func set_id(value: int) -> Update:
+        _update.set_field(Field.ID, value)
+        return self
+
+
+    func set_name(value: String) -> Update:
+        _update.set_field(Field.NAME, value)
+        return self
+
+
+    func set_surname(value: String) -> Update:
+        _update.set_field(Field.SURNAME, value)
+        return self
+
+
+    func set_surname_null() -> Update:
+        _update.set_field(Field.SURNAME, null)
+        return self
+
+
+    func set_government_id(value: String) -> Update:
+        _update.set_field(Field.GOVERNMENT_ID, value)
+        return self
+
+
+    func where_id(op: String, value: int) -> Update:
+        _update.where(Field.ID, op, value)
+        return self
+
+
+    func or_where_id(op: String, value: int) -> Update:
+        _update.or_where(Field.ID, op, value)
+        return self
+
+
+    func where_id_in(values: Array[int]) -> Update:
+        _update.where_in(Field.ID, values)
+        return self
+
+
+    func or_where_id_in(values: Array[int]) -> Update:
+        _update.or_where_in(Field.ID, values)
+        return self
+
+
+    func where_id_not_in(values: Array[int]) -> Update:
+        _update.where_not_in(Field.ID, values)
+        return self
+
+
+    func where_id_between(low: int, high: int) -> Update:
+        _update.where_between(Field.ID, low, high)
+        return self
+
+
+    func where_name(op: String, value: String) -> Update:
+        _update.where(Field.NAME, op, value)
+        return self
+
+
+    func or_where_name(op: String, value: String) -> Update:
+        _update.or_where(Field.NAME, op, value)
+        return self
+
+
+    func where_name_in(values: Array[String]) -> Update:
+        _update.where_in(Field.NAME, values)
+        return self
+
+
+    func or_where_name_in(values: Array[String]) -> Update:
+        _update.or_where_in(Field.NAME, values)
+        return self
+
+
+    func where_name_not_in(values: Array[String]) -> Update:
+        _update.where_not_in(Field.NAME, values)
+        return self
+
+
+    func where_surname(op: String, value: String) -> Update:
+        _update.where(Field.SURNAME, op, value)
+        return self
+
+
+    func or_where_surname(op: String, value: String) -> Update:
+        _update.or_where(Field.SURNAME, op, value)
+        return self
+
+
+    func where_surname_in(values: Array[String]) -> Update:
+        _update.where_in(Field.SURNAME, values)
+        return self
+
+
+    func or_where_surname_in(values: Array[String]) -> Update:
+        _update.or_where_in(Field.SURNAME, values)
+        return self
+
+
+    func where_surname_not_in(values: Array[String]) -> Update:
+        _update.where_not_in(Field.SURNAME, values)
+        return self
+
+
+    func where_surname_null() -> Update:
+        _update.where_null(Field.SURNAME)
+        return self
+
+
+    func or_where_surname_null() -> Update:
+        _update.or_where_null(Field.SURNAME)
+        return self
+
+
+    func where_surname_not_null() -> Update:
+        _update.where_not_null(Field.SURNAME)
+        return self
+
+
+    func where_government_id(op: String, value: String) -> Update:
+        _update.where(Field.GOVERNMENT_ID, op, value)
+        return self
+
+
+    func or_where_government_id(op: String, value: String) -> Update:
+        _update.or_where(Field.GOVERNMENT_ID, op, value)
+        return self
+
+
+    func where_government_id_in(values: Array[String]) -> Update:
+        _update.where_in(Field.GOVERNMENT_ID, values)
+        return self
+
+
+    func or_where_government_id_in(values: Array[String]) -> Update:
+        _update.or_where_in(Field.GOVERNMENT_ID, values)
+        return self
+
+
+    func where_government_id_not_in(values: Array[String]) -> Update:
+        _update.where_not_in(Field.GOVERNMENT_ID, values)
+        return self
+
+
+    func where_group(body: Callable) -> Update:
+        _update.where_group(body)
+        return self
+
+
+    func or_where_group(body: Callable) -> Update:
+        _update.or_where_group(body)
+        return self
+
+
+    func where_raw(sql: String, args: Array = []) -> Update:
+        _update.where_raw(sql, args)
+        return self
+
+
+    ## Allows running without conditions, changing every row.
+    func all_rows() -> Update:
+        _update.all_rows()
+        return self
+
+
+    ## Runs the update. Returns how many rows changed, or -1 on failure.
+    func execute() -> int:
+        return _update.execute()
+
+
+    func db_update() -> DbUpdate:
+        return _update
+
+
+## Deletes every matching [FxPerson] row, made by delete(). See [DbDelete].
+class Delete:
+    extends RefCounted
+
+    var _delete: DbDelete
+
+
+    func _init(wrapped: DbDelete) -> void:
+        _delete = wrapped
+
+
+    func where_id(op: String, value: int) -> Delete:
+        _delete.where(Field.ID, op, value)
+        return self
+
+
+    func or_where_id(op: String, value: int) -> Delete:
+        _delete.or_where(Field.ID, op, value)
+        return self
+
+
+    func where_id_in(values: Array[int]) -> Delete:
+        _delete.where_in(Field.ID, values)
+        return self
+
+
+    func or_where_id_in(values: Array[int]) -> Delete:
+        _delete.or_where_in(Field.ID, values)
+        return self
+
+
+    func where_id_not_in(values: Array[int]) -> Delete:
+        _delete.where_not_in(Field.ID, values)
+        return self
+
+
+    func where_id_between(low: int, high: int) -> Delete:
+        _delete.where_between(Field.ID, low, high)
+        return self
+
+
+    func where_name(op: String, value: String) -> Delete:
+        _delete.where(Field.NAME, op, value)
+        return self
+
+
+    func or_where_name(op: String, value: String) -> Delete:
+        _delete.or_where(Field.NAME, op, value)
+        return self
+
+
+    func where_name_in(values: Array[String]) -> Delete:
+        _delete.where_in(Field.NAME, values)
+        return self
+
+
+    func or_where_name_in(values: Array[String]) -> Delete:
+        _delete.or_where_in(Field.NAME, values)
+        return self
+
+
+    func where_name_not_in(values: Array[String]) -> Delete:
+        _delete.where_not_in(Field.NAME, values)
+        return self
+
+
+    func where_surname(op: String, value: String) -> Delete:
+        _delete.where(Field.SURNAME, op, value)
+        return self
+
+
+    func or_where_surname(op: String, value: String) -> Delete:
+        _delete.or_where(Field.SURNAME, op, value)
+        return self
+
+
+    func where_surname_in(values: Array[String]) -> Delete:
+        _delete.where_in(Field.SURNAME, values)
+        return self
+
+
+    func or_where_surname_in(values: Array[String]) -> Delete:
+        _delete.or_where_in(Field.SURNAME, values)
+        return self
+
+
+    func where_surname_not_in(values: Array[String]) -> Delete:
+        _delete.where_not_in(Field.SURNAME, values)
+        return self
+
+
+    func where_surname_null() -> Delete:
+        _delete.where_null(Field.SURNAME)
+        return self
+
+
+    func or_where_surname_null() -> Delete:
+        _delete.or_where_null(Field.SURNAME)
+        return self
+
+
+    func where_surname_not_null() -> Delete:
+        _delete.where_not_null(Field.SURNAME)
+        return self
+
+
+    func where_government_id(op: String, value: String) -> Delete:
+        _delete.where(Field.GOVERNMENT_ID, op, value)
+        return self
+
+
+    func or_where_government_id(op: String, value: String) -> Delete:
+        _delete.or_where(Field.GOVERNMENT_ID, op, value)
+        return self
+
+
+    func where_government_id_in(values: Array[String]) -> Delete:
+        _delete.where_in(Field.GOVERNMENT_ID, values)
+        return self
+
+
+    func or_where_government_id_in(values: Array[String]) -> Delete:
+        _delete.or_where_in(Field.GOVERNMENT_ID, values)
+        return self
+
+
+    func where_government_id_not_in(values: Array[String]) -> Delete:
+        _delete.where_not_in(Field.GOVERNMENT_ID, values)
+        return self
+
+
+    func where_group(body: Callable) -> Delete:
+        _delete.where_group(body)
+        return self
+
+
+    func or_where_group(body: Callable) -> Delete:
+        _delete.or_where_group(body)
+        return self
+
+
+    func where_raw(sql: String, args: Array = []) -> Delete:
+        _delete.where_raw(sql, args)
+        return self
+
+
+    ## Allows running without conditions, deleting every row.
+    func all_rows() -> Delete:
+        _delete.all_rows()
+        return self
+
+
+    ## Runs the delete. Returns how many rows were deleted, or -1 on failure.
+    func execute() -> int:
+        return _delete.execute()
+
+
+    func db_delete() -> DbDelete:
+        return _delete

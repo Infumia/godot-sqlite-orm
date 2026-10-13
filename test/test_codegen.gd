@@ -96,8 +96,8 @@ func test_generation_is_deterministic() -> void:
 func test_name_clash_is_an_error() -> void:
     var built: Dictionary = DbCodegen.build([CgClash], "res://out")
     var errors: PackedStringArray = built["errors"]
-    assert_eq(errors.size(), 1)
-    assert_string_contains(errors[0], "'where_group' (from field 'group' and the query itself)")
+    assert_eq(errors.size(), 1, "one error per model, listing every clash")
+    assert_string_contains(errors[0], "Query.where_group (from field 'group' and the query itself)")
 
 
 func test_key_field_named_db_is_an_error() -> void:
@@ -292,6 +292,94 @@ func test_helper_errors_surface_on_the_database() -> void:
     var db: Db = open_memory()
     assert_eq(FxCharacterDb.query(db).where_level("===", 1).all(), [] as Array[FxCharacter])
     assert_string_contains(db.last_error(), "unknown operator")
+
+
+func test_typed_update() -> void:
+    var db: Db = open_memory()
+    _seed(db)
+    var changed: int = FxCharacterDb.update(db).set_level(5).where_level(Db.LT, 25).execute()
+    assert_eq(changed, 2)
+    assert_eq(FxCharacterDb.query(db).where_level(Db.EQ, 5).count(), 2)
+    assert_eq(FxCharacterDb.update(db).set_name("All").all_rows().execute(), 3)
+
+
+func test_typed_update_sets_and_clears_nullable_fields() -> void:
+    var db: Db = open_memory()
+    _seed(db)
+    var sword: FxItem = make_item("Sword")
+    db.insert(sword)
+    FxCharacterDb.update(db).set_weapon_id(sword.id).where_name_in(["Ada", "Bob"]).execute()
+    assert_eq(FxCharacterDb.query(db).where_weapon_id_not_null().count(), 2)
+    FxCharacterDb.update(db).set_weapon_id_null().where_name(Db.EQ, "Ada").execute()
+    assert_eq(
+        FxCharacterDb.query(db).where_weapon_id_null().pluck_name(),
+        ["Ada", "Cid"] as Array[String],
+    )
+
+
+func test_typed_update_refuses_without_conditions() -> void:
+    var db: Db = open_memory()
+    _seed(db)
+    assert_eq(FxCharacterDb.update(db).set_level(1).execute(), -1)
+    assert_string_contains(db.last_error(), "all_rows()")
+
+
+func test_typed_update_with_or_conditions_and_groups() -> void:
+    var db: Db = open_memory()
+    _seed(db)
+    var changed: int = (
+        FxCharacterDb
+        .update(db)
+        .set_level(99)
+        .where_name(Db.EQ, "Ada")
+        .or_where_level_in([30])
+        .execute()
+    )
+    assert_eq(changed, 2)
+    var grouped: int = (
+        FxCharacterDb
+        .update(db)
+        .set_level(1)
+        .where_group(
+            func(w: DbWhere) -> void:
+                w.where("level", Db.EQ, 99),
+        )
+        .execute()
+    )
+    assert_eq(grouped, 2)
+    assert_not_null(FxCharacterDb.update(db).db_update())
+
+
+func test_typed_delete() -> void:
+    var db: Db = open_memory()
+    _seed(db)
+    assert_eq(FxCharacterDb.delete(db).where_level_between(15, 35).execute(), 2)
+    assert_eq(FxCharacterDb.query(db).pluck_name(), ["Ada"] as Array[String])
+    assert_eq(FxCharacterDb.delete(db).execute(), -1, "no conditions without all_rows()")
+    assert_eq(FxCharacterDb.delete(db).all_rows().execute(), 1)
+    assert_not_null(FxCharacterDb.delete(db).db_delete())
+
+
+func test_typed_delete_with_enum_and_null_conditions() -> void:
+    var db: Db = open_memory()
+    var rare: FxItem = make_item("Rare")
+    rare.rarity = FxItem.Rarity.RARE
+    db.insert(rare)
+    var described: FxItem = make_item("Described")
+    described.description = "text"
+    db.insert(described)
+    db.insert(make_item("Plain"))
+    assert_eq(FxItemDb.delete(db).where_rarity(Db.EQ, FxItem.Rarity.RARE).execute(), 1)
+    assert_eq(FxItemDb.delete(db).where_description_not_null().execute(), 1)
+    assert_eq(FxItemDb.query(db).pluck_name(), ["Plain"] as Array[String])
+
+
+func test_update_and_delete_name_clashes_are_reported() -> void:
+    var built: Dictionary = DbCodegen.build([CgClash], "res://out")
+    var text: String = "\n".join(built["errors"])
+    assert_string_contains(text, "Query.where_group")
+    assert_string_contains(text, "Update.where_group")
+    assert_string_contains(text, "Delete.where_group")
 
 
 func _seed(db: Db) -> void:

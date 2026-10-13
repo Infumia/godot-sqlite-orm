@@ -15,6 +15,16 @@ static func query(db: Db) -> Query:
     return Query.new(db.select(FxHero))
 
 
+## Changes matching [FxHero] rows: set fields, add conditions, then execute().
+static func update(db: Db) -> Update:
+    return Update.new(db.update_all(FxHero))
+
+
+## Deletes matching [FxHero] rows: add conditions, then execute().
+static func delete(db: Db) -> Delete:
+    return Delete.new(db.delete_all(FxHero))
+
+
 ## Column names of [FxHero].
 class Field:
     const ID: StringName = &"id"
@@ -45,8 +55,8 @@ class Query:
     var _query: DbQuery
 
 
-    func _init(db_query: DbQuery) -> void:
-        _query = db_query
+    func _init(wrapped: DbQuery) -> void:
+        _query = wrapped
 
 
     func where_id(op: String, value: String) -> Query:
@@ -61,6 +71,11 @@ class Query:
 
     func where_id_in(values: Array[String]) -> Query:
         _query.where_in(Field.ID, values)
+        return self
+
+
+    func or_where_id_in(values: Array[String]) -> Query:
+        _query.or_where_in(Field.ID, values)
         return self
 
 
@@ -95,6 +110,11 @@ class Query:
         return self
 
 
+    func or_where_display_name_in(values: Array[String]) -> Query:
+        _query.or_where_in(Field.DISPLAY_NAME, values)
+        return self
+
+
     func where_display_name_not_in(values: Array[String]) -> Query:
         _query.where_not_in(Field.DISPLAY_NAME, values)
         return self
@@ -126,6 +146,11 @@ class Query:
         return self
 
 
+    func or_where_class_id_in(values: Array[StringName]) -> Query:
+        _query.or_where_in(Field.CLASS_ID, values)
+        return self
+
+
     func where_class_id_not_in(values: Array[StringName]) -> Query:
         _query.where_not_in(Field.CLASS_ID, values)
         return self
@@ -154,6 +179,11 @@ class Query:
 
     func where_level_in(values: Array[int]) -> Query:
         _query.where_in(Field.LEVEL, values)
+        return self
+
+
+    func or_where_level_in(values: Array[int]) -> Query:
+        _query.or_where_in(Field.LEVEL, values)
         return self
 
 
@@ -193,6 +223,11 @@ class Query:
         return self
 
 
+    func or_where_gold_in(values: Array[float]) -> Query:
+        _query.or_where_in(Field.GOLD, values)
+        return self
+
+
     func where_gold_not_in(values: Array[float]) -> Query:
         _query.where_not_in(Field.GOLD, values)
         return self
@@ -229,6 +264,11 @@ class Query:
         return self
 
 
+    func or_where_created_unix_in(values: Array[int]) -> Query:
+        _query.or_where_in(Field.CREATED_UNIX, values)
+        return self
+
+
     func where_created_unix_not_in(values: Array[int]) -> Query:
         _query.where_not_in(Field.CREATED_UNIX, values)
         return self
@@ -262,6 +302,11 @@ class Query:
 
     func where_saved_unix_in(values: Array[int]) -> Query:
         _query.where_in(Field.SAVED_UNIX, values)
+        return self
+
+
+    func or_where_saved_unix_in(values: Array[int]) -> Query:
+        _query.or_where_in(Field.SAVED_UNIX, values)
         return self
 
 
@@ -436,3 +481,610 @@ class Query:
     ## The untyped query underneath, for what this class does not cover.
     func db_query() -> DbQuery:
         return _query
+
+
+## Changes every matching [FxHero] row, made by update(). See [DbUpdate].
+class Update:
+    extends RefCounted
+
+    var _update: DbUpdate
+
+
+    func _init(wrapped: DbUpdate) -> void:
+        _update = wrapped
+
+
+    func set_id(value: String) -> Update:
+        _update.set_field(Field.ID, value)
+        return self
+
+
+    func set_display_name(value: String) -> Update:
+        _update.set_field(Field.DISPLAY_NAME, value)
+        return self
+
+
+    func set_class_id(value: StringName) -> Update:
+        _update.set_field(Field.CLASS_ID, value)
+        return self
+
+
+    func set_level(value: int) -> Update:
+        _update.set_field(Field.LEVEL, value)
+        return self
+
+
+    func set_gold(value: float) -> Update:
+        _update.set_field(Field.GOLD, value)
+        return self
+
+
+    func set_created_unix(value: int) -> Update:
+        _update.set_field(Field.CREATED_UNIX, value)
+        return self
+
+
+    func set_saved_unix(value: int) -> Update:
+        _update.set_field(Field.SAVED_UNIX, value)
+        return self
+
+
+    func set_best_times(value: Array[float]) -> Update:
+        _update.set_field(Field.BEST_TIMES, value)
+        return self
+
+
+    func set_tutorial_seen(value: Array[StringName]) -> Update:
+        _update.set_field(Field.TUTORIAL_SEEN, value)
+        return self
+
+
+    func set_key_bindings(value: Dictionary[String, int]) -> Update:
+        _update.set_field(Field.KEY_BINDINGS, value)
+        return self
+
+
+    func set_window_position(value: Vector2i) -> Update:
+        _update.set_field(Field.WINDOW_POSITION, value)
+        return self
+
+
+    func where_id(op: String, value: String) -> Update:
+        _update.where(Field.ID, op, value)
+        return self
+
+
+    func or_where_id(op: String, value: String) -> Update:
+        _update.or_where(Field.ID, op, value)
+        return self
+
+
+    func where_id_in(values: Array[String]) -> Update:
+        _update.where_in(Field.ID, values)
+        return self
+
+
+    func or_where_id_in(values: Array[String]) -> Update:
+        _update.or_where_in(Field.ID, values)
+        return self
+
+
+    func where_id_not_in(values: Array[String]) -> Update:
+        _update.where_not_in(Field.ID, values)
+        return self
+
+
+    func where_display_name(op: String, value: String) -> Update:
+        _update.where(Field.DISPLAY_NAME, op, value)
+        return self
+
+
+    func or_where_display_name(op: String, value: String) -> Update:
+        _update.or_where(Field.DISPLAY_NAME, op, value)
+        return self
+
+
+    func where_display_name_in(values: Array[String]) -> Update:
+        _update.where_in(Field.DISPLAY_NAME, values)
+        return self
+
+
+    func or_where_display_name_in(values: Array[String]) -> Update:
+        _update.or_where_in(Field.DISPLAY_NAME, values)
+        return self
+
+
+    func where_display_name_not_in(values: Array[String]) -> Update:
+        _update.where_not_in(Field.DISPLAY_NAME, values)
+        return self
+
+
+    func where_class_id(op: String, value: StringName) -> Update:
+        _update.where(Field.CLASS_ID, op, value)
+        return self
+
+
+    func or_where_class_id(op: String, value: StringName) -> Update:
+        _update.or_where(Field.CLASS_ID, op, value)
+        return self
+
+
+    func where_class_id_in(values: Array[StringName]) -> Update:
+        _update.where_in(Field.CLASS_ID, values)
+        return self
+
+
+    func or_where_class_id_in(values: Array[StringName]) -> Update:
+        _update.or_where_in(Field.CLASS_ID, values)
+        return self
+
+
+    func where_class_id_not_in(values: Array[StringName]) -> Update:
+        _update.where_not_in(Field.CLASS_ID, values)
+        return self
+
+
+    func where_level(op: String, value: int) -> Update:
+        _update.where(Field.LEVEL, op, value)
+        return self
+
+
+    func or_where_level(op: String, value: int) -> Update:
+        _update.or_where(Field.LEVEL, op, value)
+        return self
+
+
+    func where_level_in(values: Array[int]) -> Update:
+        _update.where_in(Field.LEVEL, values)
+        return self
+
+
+    func or_where_level_in(values: Array[int]) -> Update:
+        _update.or_where_in(Field.LEVEL, values)
+        return self
+
+
+    func where_level_not_in(values: Array[int]) -> Update:
+        _update.where_not_in(Field.LEVEL, values)
+        return self
+
+
+    func where_level_between(low: int, high: int) -> Update:
+        _update.where_between(Field.LEVEL, low, high)
+        return self
+
+
+    func where_gold(op: String, value: float) -> Update:
+        _update.where(Field.GOLD, op, value)
+        return self
+
+
+    func or_where_gold(op: String, value: float) -> Update:
+        _update.or_where(Field.GOLD, op, value)
+        return self
+
+
+    func where_gold_in(values: Array[float]) -> Update:
+        _update.where_in(Field.GOLD, values)
+        return self
+
+
+    func or_where_gold_in(values: Array[float]) -> Update:
+        _update.or_where_in(Field.GOLD, values)
+        return self
+
+
+    func where_gold_not_in(values: Array[float]) -> Update:
+        _update.where_not_in(Field.GOLD, values)
+        return self
+
+
+    func where_gold_between(low: float, high: float) -> Update:
+        _update.where_between(Field.GOLD, low, high)
+        return self
+
+
+    func where_created_unix(op: String, value: int) -> Update:
+        _update.where(Field.CREATED_UNIX, op, value)
+        return self
+
+
+    func or_where_created_unix(op: String, value: int) -> Update:
+        _update.or_where(Field.CREATED_UNIX, op, value)
+        return self
+
+
+    func where_created_unix_in(values: Array[int]) -> Update:
+        _update.where_in(Field.CREATED_UNIX, values)
+        return self
+
+
+    func or_where_created_unix_in(values: Array[int]) -> Update:
+        _update.or_where_in(Field.CREATED_UNIX, values)
+        return self
+
+
+    func where_created_unix_not_in(values: Array[int]) -> Update:
+        _update.where_not_in(Field.CREATED_UNIX, values)
+        return self
+
+
+    func where_created_unix_between(low: int, high: int) -> Update:
+        _update.where_between(Field.CREATED_UNIX, low, high)
+        return self
+
+
+    func where_saved_unix(op: String, value: int) -> Update:
+        _update.where(Field.SAVED_UNIX, op, value)
+        return self
+
+
+    func or_where_saved_unix(op: String, value: int) -> Update:
+        _update.or_where(Field.SAVED_UNIX, op, value)
+        return self
+
+
+    func where_saved_unix_in(values: Array[int]) -> Update:
+        _update.where_in(Field.SAVED_UNIX, values)
+        return self
+
+
+    func or_where_saved_unix_in(values: Array[int]) -> Update:
+        _update.or_where_in(Field.SAVED_UNIX, values)
+        return self
+
+
+    func where_saved_unix_not_in(values: Array[int]) -> Update:
+        _update.where_not_in(Field.SAVED_UNIX, values)
+        return self
+
+
+    func where_saved_unix_between(low: int, high: int) -> Update:
+        _update.where_between(Field.SAVED_UNIX, low, high)
+        return self
+
+
+    func where_best_times(op: String, value: Array[float]) -> Update:
+        _update.where(Field.BEST_TIMES, op, value)
+        return self
+
+
+    func or_where_best_times(op: String, value: Array[float]) -> Update:
+        _update.or_where(Field.BEST_TIMES, op, value)
+        return self
+
+
+    func where_tutorial_seen(op: String, value: Array[StringName]) -> Update:
+        _update.where(Field.TUTORIAL_SEEN, op, value)
+        return self
+
+
+    func or_where_tutorial_seen(op: String, value: Array[StringName]) -> Update:
+        _update.or_where(Field.TUTORIAL_SEEN, op, value)
+        return self
+
+
+    func where_key_bindings(op: String, value: Dictionary[String, int]) -> Update:
+        _update.where(Field.KEY_BINDINGS, op, value)
+        return self
+
+
+    func or_where_key_bindings(op: String, value: Dictionary[String, int]) -> Update:
+        _update.or_where(Field.KEY_BINDINGS, op, value)
+        return self
+
+
+    func where_window_position(op: String, value: Vector2i) -> Update:
+        _update.where(Field.WINDOW_POSITION, op, value)
+        return self
+
+
+    func or_where_window_position(op: String, value: Vector2i) -> Update:
+        _update.or_where(Field.WINDOW_POSITION, op, value)
+        return self
+
+
+    func where_group(body: Callable) -> Update:
+        _update.where_group(body)
+        return self
+
+
+    func or_where_group(body: Callable) -> Update:
+        _update.or_where_group(body)
+        return self
+
+
+    func where_raw(sql: String, args: Array = []) -> Update:
+        _update.where_raw(sql, args)
+        return self
+
+
+    ## Allows running without conditions, changing every row.
+    func all_rows() -> Update:
+        _update.all_rows()
+        return self
+
+
+    ## Runs the update. Returns how many rows changed, or -1 on failure.
+    func execute() -> int:
+        return _update.execute()
+
+
+    func db_update() -> DbUpdate:
+        return _update
+
+
+## Deletes every matching [FxHero] row, made by delete(). See [DbDelete].
+class Delete:
+    extends RefCounted
+
+    var _delete: DbDelete
+
+
+    func _init(wrapped: DbDelete) -> void:
+        _delete = wrapped
+
+
+    func where_id(op: String, value: String) -> Delete:
+        _delete.where(Field.ID, op, value)
+        return self
+
+
+    func or_where_id(op: String, value: String) -> Delete:
+        _delete.or_where(Field.ID, op, value)
+        return self
+
+
+    func where_id_in(values: Array[String]) -> Delete:
+        _delete.where_in(Field.ID, values)
+        return self
+
+
+    func or_where_id_in(values: Array[String]) -> Delete:
+        _delete.or_where_in(Field.ID, values)
+        return self
+
+
+    func where_id_not_in(values: Array[String]) -> Delete:
+        _delete.where_not_in(Field.ID, values)
+        return self
+
+
+    func where_display_name(op: String, value: String) -> Delete:
+        _delete.where(Field.DISPLAY_NAME, op, value)
+        return self
+
+
+    func or_where_display_name(op: String, value: String) -> Delete:
+        _delete.or_where(Field.DISPLAY_NAME, op, value)
+        return self
+
+
+    func where_display_name_in(values: Array[String]) -> Delete:
+        _delete.where_in(Field.DISPLAY_NAME, values)
+        return self
+
+
+    func or_where_display_name_in(values: Array[String]) -> Delete:
+        _delete.or_where_in(Field.DISPLAY_NAME, values)
+        return self
+
+
+    func where_display_name_not_in(values: Array[String]) -> Delete:
+        _delete.where_not_in(Field.DISPLAY_NAME, values)
+        return self
+
+
+    func where_class_id(op: String, value: StringName) -> Delete:
+        _delete.where(Field.CLASS_ID, op, value)
+        return self
+
+
+    func or_where_class_id(op: String, value: StringName) -> Delete:
+        _delete.or_where(Field.CLASS_ID, op, value)
+        return self
+
+
+    func where_class_id_in(values: Array[StringName]) -> Delete:
+        _delete.where_in(Field.CLASS_ID, values)
+        return self
+
+
+    func or_where_class_id_in(values: Array[StringName]) -> Delete:
+        _delete.or_where_in(Field.CLASS_ID, values)
+        return self
+
+
+    func where_class_id_not_in(values: Array[StringName]) -> Delete:
+        _delete.where_not_in(Field.CLASS_ID, values)
+        return self
+
+
+    func where_level(op: String, value: int) -> Delete:
+        _delete.where(Field.LEVEL, op, value)
+        return self
+
+
+    func or_where_level(op: String, value: int) -> Delete:
+        _delete.or_where(Field.LEVEL, op, value)
+        return self
+
+
+    func where_level_in(values: Array[int]) -> Delete:
+        _delete.where_in(Field.LEVEL, values)
+        return self
+
+
+    func or_where_level_in(values: Array[int]) -> Delete:
+        _delete.or_where_in(Field.LEVEL, values)
+        return self
+
+
+    func where_level_not_in(values: Array[int]) -> Delete:
+        _delete.where_not_in(Field.LEVEL, values)
+        return self
+
+
+    func where_level_between(low: int, high: int) -> Delete:
+        _delete.where_between(Field.LEVEL, low, high)
+        return self
+
+
+    func where_gold(op: String, value: float) -> Delete:
+        _delete.where(Field.GOLD, op, value)
+        return self
+
+
+    func or_where_gold(op: String, value: float) -> Delete:
+        _delete.or_where(Field.GOLD, op, value)
+        return self
+
+
+    func where_gold_in(values: Array[float]) -> Delete:
+        _delete.where_in(Field.GOLD, values)
+        return self
+
+
+    func or_where_gold_in(values: Array[float]) -> Delete:
+        _delete.or_where_in(Field.GOLD, values)
+        return self
+
+
+    func where_gold_not_in(values: Array[float]) -> Delete:
+        _delete.where_not_in(Field.GOLD, values)
+        return self
+
+
+    func where_gold_between(low: float, high: float) -> Delete:
+        _delete.where_between(Field.GOLD, low, high)
+        return self
+
+
+    func where_created_unix(op: String, value: int) -> Delete:
+        _delete.where(Field.CREATED_UNIX, op, value)
+        return self
+
+
+    func or_where_created_unix(op: String, value: int) -> Delete:
+        _delete.or_where(Field.CREATED_UNIX, op, value)
+        return self
+
+
+    func where_created_unix_in(values: Array[int]) -> Delete:
+        _delete.where_in(Field.CREATED_UNIX, values)
+        return self
+
+
+    func or_where_created_unix_in(values: Array[int]) -> Delete:
+        _delete.or_where_in(Field.CREATED_UNIX, values)
+        return self
+
+
+    func where_created_unix_not_in(values: Array[int]) -> Delete:
+        _delete.where_not_in(Field.CREATED_UNIX, values)
+        return self
+
+
+    func where_created_unix_between(low: int, high: int) -> Delete:
+        _delete.where_between(Field.CREATED_UNIX, low, high)
+        return self
+
+
+    func where_saved_unix(op: String, value: int) -> Delete:
+        _delete.where(Field.SAVED_UNIX, op, value)
+        return self
+
+
+    func or_where_saved_unix(op: String, value: int) -> Delete:
+        _delete.or_where(Field.SAVED_UNIX, op, value)
+        return self
+
+
+    func where_saved_unix_in(values: Array[int]) -> Delete:
+        _delete.where_in(Field.SAVED_UNIX, values)
+        return self
+
+
+    func or_where_saved_unix_in(values: Array[int]) -> Delete:
+        _delete.or_where_in(Field.SAVED_UNIX, values)
+        return self
+
+
+    func where_saved_unix_not_in(values: Array[int]) -> Delete:
+        _delete.where_not_in(Field.SAVED_UNIX, values)
+        return self
+
+
+    func where_saved_unix_between(low: int, high: int) -> Delete:
+        _delete.where_between(Field.SAVED_UNIX, low, high)
+        return self
+
+
+    func where_best_times(op: String, value: Array[float]) -> Delete:
+        _delete.where(Field.BEST_TIMES, op, value)
+        return self
+
+
+    func or_where_best_times(op: String, value: Array[float]) -> Delete:
+        _delete.or_where(Field.BEST_TIMES, op, value)
+        return self
+
+
+    func where_tutorial_seen(op: String, value: Array[StringName]) -> Delete:
+        _delete.where(Field.TUTORIAL_SEEN, op, value)
+        return self
+
+
+    func or_where_tutorial_seen(op: String, value: Array[StringName]) -> Delete:
+        _delete.or_where(Field.TUTORIAL_SEEN, op, value)
+        return self
+
+
+    func where_key_bindings(op: String, value: Dictionary[String, int]) -> Delete:
+        _delete.where(Field.KEY_BINDINGS, op, value)
+        return self
+
+
+    func or_where_key_bindings(op: String, value: Dictionary[String, int]) -> Delete:
+        _delete.or_where(Field.KEY_BINDINGS, op, value)
+        return self
+
+
+    func where_window_position(op: String, value: Vector2i) -> Delete:
+        _delete.where(Field.WINDOW_POSITION, op, value)
+        return self
+
+
+    func or_where_window_position(op: String, value: Vector2i) -> Delete:
+        _delete.or_where(Field.WINDOW_POSITION, op, value)
+        return self
+
+
+    func where_group(body: Callable) -> Delete:
+        _delete.where_group(body)
+        return self
+
+
+    func or_where_group(body: Callable) -> Delete:
+        _delete.or_where_group(body)
+        return self
+
+
+    func where_raw(sql: String, args: Array = []) -> Delete:
+        _delete.where_raw(sql, args)
+        return self
+
+
+    ## Allows running without conditions, deleting every row.
+    func all_rows() -> Delete:
+        _delete.all_rows()
+        return self
+
+
+    ## Runs the delete. Returns how many rows were deleted, or -1 on failure.
+    func execute() -> int:
+        return _delete.execute()
+
+
+    func db_delete() -> DbDelete:
+        return _delete

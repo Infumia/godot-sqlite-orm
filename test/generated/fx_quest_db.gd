@@ -15,6 +15,16 @@ static func query(db: Db) -> Query:
     return Query.new(db.select(FxQuest))
 
 
+## Changes matching [FxQuest] rows: set fields, add conditions, then execute().
+static func update(db: Db) -> Update:
+    return Update.new(db.update_all(FxQuest))
+
+
+## Deletes matching [FxQuest] rows: add conditions, then execute().
+static func delete(db: Db) -> Delete:
+    return Delete.new(db.delete_all(FxQuest))
+
+
 ## Column names of [FxQuest].
 class Field:
     const HERO_ID: StringName = &"hero_id"
@@ -30,8 +40,8 @@ class Query:
     var _query: DbQuery
 
 
-    func _init(db_query: DbQuery) -> void:
-        _query = db_query
+    func _init(wrapped: DbQuery) -> void:
+        _query = wrapped
 
 
     func where_hero_id(op: String, value: String) -> Query:
@@ -46,6 +56,11 @@ class Query:
 
     func where_hero_id_in(values: Array[String]) -> Query:
         _query.where_in(Field.HERO_ID, values)
+        return self
+
+
+    func or_where_hero_id_in(values: Array[String]) -> Query:
+        _query.or_where_in(Field.HERO_ID, values)
         return self
 
 
@@ -80,6 +95,11 @@ class Query:
         return self
 
 
+    func or_where_quest_id_in(values: Array[StringName]) -> Query:
+        _query.or_where_in(Field.QUEST_ID, values)
+        return self
+
+
     func where_quest_id_not_in(values: Array[StringName]) -> Query:
         _query.where_not_in(Field.QUEST_ID, values)
         return self
@@ -108,6 +128,11 @@ class Query:
 
     func where_status_in(values: Array[FxQuest.Status]) -> Query:
         _query.where_in(Field.STATUS, values)
+        return self
+
+
+    func or_where_status_in(values: Array[FxQuest.Status]) -> Query:
+        _query.or_where_in(Field.STATUS, values)
         return self
 
 
@@ -201,3 +226,285 @@ class Query:
     ## The untyped query underneath, for what this class does not cover.
     func db_query() -> DbQuery:
         return _query
+
+
+## Changes every matching [FxQuest] row, made by update(). See [DbUpdate].
+class Update:
+    extends RefCounted
+
+    var _update: DbUpdate
+
+
+    func _init(wrapped: DbUpdate) -> void:
+        _update = wrapped
+
+
+    func set_hero_id(value: String) -> Update:
+        _update.set_field(Field.HERO_ID, value)
+        return self
+
+
+    func set_quest_id(value: StringName) -> Update:
+        _update.set_field(Field.QUEST_ID, value)
+        return self
+
+
+    func set_status(value: FxQuest.Status) -> Update:
+        _update.set_field(Field.STATUS, value)
+        return self
+
+
+    func set_counts(value: Dictionary[String, int]) -> Update:
+        _update.set_field(Field.COUNTS, value)
+        return self
+
+
+    func where_hero_id(op: String, value: String) -> Update:
+        _update.where(Field.HERO_ID, op, value)
+        return self
+
+
+    func or_where_hero_id(op: String, value: String) -> Update:
+        _update.or_where(Field.HERO_ID, op, value)
+        return self
+
+
+    func where_hero_id_in(values: Array[String]) -> Update:
+        _update.where_in(Field.HERO_ID, values)
+        return self
+
+
+    func or_where_hero_id_in(values: Array[String]) -> Update:
+        _update.or_where_in(Field.HERO_ID, values)
+        return self
+
+
+    func where_hero_id_not_in(values: Array[String]) -> Update:
+        _update.where_not_in(Field.HERO_ID, values)
+        return self
+
+
+    func where_quest_id(op: String, value: StringName) -> Update:
+        _update.where(Field.QUEST_ID, op, value)
+        return self
+
+
+    func or_where_quest_id(op: String, value: StringName) -> Update:
+        _update.or_where(Field.QUEST_ID, op, value)
+        return self
+
+
+    func where_quest_id_in(values: Array[StringName]) -> Update:
+        _update.where_in(Field.QUEST_ID, values)
+        return self
+
+
+    func or_where_quest_id_in(values: Array[StringName]) -> Update:
+        _update.or_where_in(Field.QUEST_ID, values)
+        return self
+
+
+    func where_quest_id_not_in(values: Array[StringName]) -> Update:
+        _update.where_not_in(Field.QUEST_ID, values)
+        return self
+
+
+    func where_status(op: String, value: FxQuest.Status) -> Update:
+        _update.where(Field.STATUS, op, value)
+        return self
+
+
+    func or_where_status(op: String, value: FxQuest.Status) -> Update:
+        _update.or_where(Field.STATUS, op, value)
+        return self
+
+
+    func where_status_in(values: Array[FxQuest.Status]) -> Update:
+        _update.where_in(Field.STATUS, values)
+        return self
+
+
+    func or_where_status_in(values: Array[FxQuest.Status]) -> Update:
+        _update.or_where_in(Field.STATUS, values)
+        return self
+
+
+    func where_status_not_in(values: Array[FxQuest.Status]) -> Update:
+        _update.where_not_in(Field.STATUS, values)
+        return self
+
+
+    func where_status_between(low: FxQuest.Status, high: FxQuest.Status) -> Update:
+        _update.where_between(Field.STATUS, low, high)
+        return self
+
+
+    func where_counts(op: String, value: Dictionary[String, int]) -> Update:
+        _update.where(Field.COUNTS, op, value)
+        return self
+
+
+    func or_where_counts(op: String, value: Dictionary[String, int]) -> Update:
+        _update.or_where(Field.COUNTS, op, value)
+        return self
+
+
+    func where_group(body: Callable) -> Update:
+        _update.where_group(body)
+        return self
+
+
+    func or_where_group(body: Callable) -> Update:
+        _update.or_where_group(body)
+        return self
+
+
+    func where_raw(sql: String, args: Array = []) -> Update:
+        _update.where_raw(sql, args)
+        return self
+
+
+    ## Allows running without conditions, changing every row.
+    func all_rows() -> Update:
+        _update.all_rows()
+        return self
+
+
+    ## Runs the update. Returns how many rows changed, or -1 on failure.
+    func execute() -> int:
+        return _update.execute()
+
+
+    func db_update() -> DbUpdate:
+        return _update
+
+
+## Deletes every matching [FxQuest] row, made by delete(). See [DbDelete].
+class Delete:
+    extends RefCounted
+
+    var _delete: DbDelete
+
+
+    func _init(wrapped: DbDelete) -> void:
+        _delete = wrapped
+
+
+    func where_hero_id(op: String, value: String) -> Delete:
+        _delete.where(Field.HERO_ID, op, value)
+        return self
+
+
+    func or_where_hero_id(op: String, value: String) -> Delete:
+        _delete.or_where(Field.HERO_ID, op, value)
+        return self
+
+
+    func where_hero_id_in(values: Array[String]) -> Delete:
+        _delete.where_in(Field.HERO_ID, values)
+        return self
+
+
+    func or_where_hero_id_in(values: Array[String]) -> Delete:
+        _delete.or_where_in(Field.HERO_ID, values)
+        return self
+
+
+    func where_hero_id_not_in(values: Array[String]) -> Delete:
+        _delete.where_not_in(Field.HERO_ID, values)
+        return self
+
+
+    func where_quest_id(op: String, value: StringName) -> Delete:
+        _delete.where(Field.QUEST_ID, op, value)
+        return self
+
+
+    func or_where_quest_id(op: String, value: StringName) -> Delete:
+        _delete.or_where(Field.QUEST_ID, op, value)
+        return self
+
+
+    func where_quest_id_in(values: Array[StringName]) -> Delete:
+        _delete.where_in(Field.QUEST_ID, values)
+        return self
+
+
+    func or_where_quest_id_in(values: Array[StringName]) -> Delete:
+        _delete.or_where_in(Field.QUEST_ID, values)
+        return self
+
+
+    func where_quest_id_not_in(values: Array[StringName]) -> Delete:
+        _delete.where_not_in(Field.QUEST_ID, values)
+        return self
+
+
+    func where_status(op: String, value: FxQuest.Status) -> Delete:
+        _delete.where(Field.STATUS, op, value)
+        return self
+
+
+    func or_where_status(op: String, value: FxQuest.Status) -> Delete:
+        _delete.or_where(Field.STATUS, op, value)
+        return self
+
+
+    func where_status_in(values: Array[FxQuest.Status]) -> Delete:
+        _delete.where_in(Field.STATUS, values)
+        return self
+
+
+    func or_where_status_in(values: Array[FxQuest.Status]) -> Delete:
+        _delete.or_where_in(Field.STATUS, values)
+        return self
+
+
+    func where_status_not_in(values: Array[FxQuest.Status]) -> Delete:
+        _delete.where_not_in(Field.STATUS, values)
+        return self
+
+
+    func where_status_between(low: FxQuest.Status, high: FxQuest.Status) -> Delete:
+        _delete.where_between(Field.STATUS, low, high)
+        return self
+
+
+    func where_counts(op: String, value: Dictionary[String, int]) -> Delete:
+        _delete.where(Field.COUNTS, op, value)
+        return self
+
+
+    func or_where_counts(op: String, value: Dictionary[String, int]) -> Delete:
+        _delete.or_where(Field.COUNTS, op, value)
+        return self
+
+
+    func where_group(body: Callable) -> Delete:
+        _delete.where_group(body)
+        return self
+
+
+    func or_where_group(body: Callable) -> Delete:
+        _delete.or_where_group(body)
+        return self
+
+
+    func where_raw(sql: String, args: Array = []) -> Delete:
+        _delete.where_raw(sql, args)
+        return self
+
+
+    ## Allows running without conditions, deleting every row.
+    func all_rows() -> Delete:
+        _delete.all_rows()
+        return self
+
+
+    ## Runs the delete. Returns how many rows were deleted, or -1 on failure.
+    func execute() -> int:
+        return _delete.execute()
+
+
+    func db_delete() -> DbDelete:
+        return _delete
