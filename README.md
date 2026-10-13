@@ -161,12 +161,20 @@ func _after_load() -> void:   # after the columns are read
 ## Opening a database
 
 ```gdscript
-const MODELS: Array = [Item, Character, Hero, Gear]
+const MODELS: Array = [
+    preload("models/item.gd"),
+    preload("models/character.gd"),
+    preload("models/hero.gd"),
+    preload("models/gear.gd"),
+]
 
 var db := Db.open("user://saves/game.db", MODELS, Migrations.LIST)
 if not db.is_open():
     push_error(db.last_error())
 ```
+
+A class name is not a constant expression in GDScript, so a `const` list of models uses
+`preload`. Outside a `const`, class names work too: `Db.open(path, [Item, Character])`.
 
 `open` always returns a `Db`; check `is_open()`. It compiles the models (an invalid model
 fails before any file is touched), opens or creates the file and its folders, checks the
