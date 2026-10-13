@@ -64,13 +64,14 @@ static func _schema(s: SchemaBuilder) -> void:
 	s.field("id").primary_key().auto_increment()
 	s.field("name").not_null()
 	s.field("level").not_null().check(">= 1")
-	s.belongs_to("weapon", Item).nullable().on_delete_set_null()
+	s.field("weapon_id").belongs_to("weapon", Item).on_delete_set_null()
 ```
 
 Column types come from the `var` types: `int` → `INTEGER`, `float` → `REAL`,
 `String` → `TEXT`, `bool` → `INTEGER` (0/1), `PackedByteArray` → `BLOB`.
-A typed `int` cannot hold `null`, so a nullable column is declared as `Variant`; its
-type then comes from `_schema` (`.type(TYPE_INT)`, or the target key for a relation).
+Columns allow `NULL` unless marked `.not_null()`. A typed `int` cannot hold `null`, so a
+column that can be `NULL` is declared as `Variant`; its type then comes from `_schema`
+(`.type(TYPE_INT)`, or the target field for a foreign key).
 
 ### Opening a database
 
@@ -144,31 +145,35 @@ var rows: Array = db.raw(
 
 ### Relations
 
-`belongs_to("weapon", Item)` declares the `weapon_id` column and its foreign key, so
-`weapon_id` is not listed with `s.field`:
-
-```sql
-weapon_id INTEGER REFERENCES items(id) ON DELETE SET NULL
-```
-
-| Part        | Comes from                     | Change with           |
-| ----------- | ------------------------------ | --------------------- |
-| Column name | relation name + `_id`          | `.column("name")`     |
-| Target      | `Item`'s table and primary key | `.to("field")`        |
-| Column type | the target field's type        | —                     |
-| `NOT NULL`  | added unless `.nullable()`     | —                     |
-| `ON DELETE` | `.on_delete_*()`               | `cascade`, `restrict` |
+A foreign key is a column declared with `s.field` like any other, plus `.references()`:
 
 ```gdscript
-s.belongs_to("weapon", Item).column("equipped_item_id").to("uuid").on_delete_cascade()
+s.field("owner_id").references(Player).on_delete_cascade()
+# owner_id INTEGER REFERENCES players(id) ON DELETE CASCADE
+```
+
+`.belongs_to()` does the same and also binds a relation `var` that holds the target row:
+
+```gdscript
+s.field("weapon_id").belongs_to("weapon", Item).on_delete_set_null()
+# weapon_id INTEGER REFERENCES items(id) ON DELETE SET NULL
+```
+
+| Part        | Comes from                     | Change with                       |
+| ----------- | ------------------------------ | --------------------------------- |
+| Target      | `Item`'s table and primary key | `.to("field")`                    |
+| Column type | the target field's type        | —                                 |
+| `ON DELETE` | `.on_delete_*()`               | `set_null`, `cascade`, `restrict` |
+
+```gdscript
+s.field("equipped_item_id").belongs_to("equipped", Item).to("uuid").on_delete_cascade()
 # equipped_item_id TEXT REFERENCES items(uuid) ON DELETE CASCADE
 ```
 
-- The model needs a `var` for the column (`weapon_id`) and a typed `var` for the
-  relation (`weapon: Item`). The relation is not a column and is never written.
-- The column gets an index, since SQLite does not index foreign keys by itself.
-- `Db.open` reports an error when a `var` is missing or the column is also declared
-  with `s.field`.
+- The model needs a `var` for the column (`weapon_id`) and, for `belongs_to`, a typed
+  `var` for the relation (`weapon: Item`). The relation is not a column and is never written.
+- Foreign key columns get an index, since SQLite does not index them by itself.
+- `Db.open` reports an error when one of these `var`s is missing.
 
 Relations are never loaded on their own; ask for them:
 
