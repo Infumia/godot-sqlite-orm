@@ -46,6 +46,9 @@ var on_delete: DbField.OnDelete = DbField.OnDelete.NO_ACTION
 var on_update_cascade: bool = false
 ## For typed Array and Dictionary vars: element types, as in [method Array.get_typed_builtin].
 var element_type: int = TYPE_NIL
+## The var's type as GDScript source ("int", "FxItem.Rarity", "Array[StringName]",
+## "Variant"), for generated code.
+var type_text: String = "Variant"
 var key_type: int = TYPE_NIL
 var dictionary_value_type: int = TYPE_NIL
 var _error: String = ""

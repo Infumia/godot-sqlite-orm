@@ -14,6 +14,34 @@ var _properties: Dictionary[GDScript, Dictionary] = { }
 var _errors: PackedStringArray = []
 
 
+## The type of a script var, written as GDScript source. Falls back to the plain Variant type
+## when the declared type has no name a script can use (an enum of a script without
+## class_name).
+static func type_text(property: Dictionary) -> String:
+    var usage: int = property["usage"]
+    if usage & PROPERTY_USAGE_NIL_IS_VARIANT:
+        return "Variant"
+    var declared: int = property["type"]
+    var hint: int = property["hint"]
+    var hint_string: String = property["hint_string"]
+    var class_label: String = property["class_name"]
+    match declared:
+        TYPE_INT, TYPE_OBJECT:
+            if _is_type_name(class_label):
+                return class_label
+        TYPE_ARRAY:
+            if hint == PROPERTY_HINT_ARRAY_TYPE:
+                return "Array[%s]" % _element_text(hint_string)
+        TYPE_DICTIONARY:
+            if hint == PROPERTY_HINT_DICTIONARY_TYPE:
+                var pair: PackedStringArray = hint_string.split(";")
+                return "Dictionary[%s, %s]" % [
+                    _element_text(pair[0]),
+                    _element_text(pair[1] if pair.size() > 1 else ""),
+                ]
+    return type_string(declared)
+
+
 static func _script_name(script: GDScript) -> String:
     if script == null:
         return "null"
@@ -21,6 +49,21 @@ static func _script_name(script: GDScript) -> String:
     if not global_name.is_empty():
         return global_name
     return script.resource_path.get_file()
+
+
+static func _element_text(type_name: String) -> String:
+    if type_name.is_empty():
+        return "Variant"
+    # A script path names a class without class_name; "path.gd.Enum" names its enum.
+    if type_name.begins_with("res://"):
+        return "Variant" if type_name.get_extension() == "gd" else "int"
+    if type_name.contains(":"):
+        return "Variant"
+    return type_name
+
+
+static func _is_type_name(text: String) -> bool:
+    return not text.is_empty() and not text.begins_with("res://") and not text.contains(":")
 
 
 ## Compiles [param models]. Returns every problem found; empty when all is well.
@@ -149,6 +192,7 @@ func _compile_column(
     var usage: int = property["usage"]
     var declared: int = property["type"]
     column.var_type = TYPE_NIL if usage & PROPERTY_USAGE_NIL_IS_VARIANT else declared
+    column.type_text = type_text(property)
     if field.value_type != TYPE_NIL:
         if column.var_type != TYPE_NIL and column.var_type != field.value_type:
             _errors.append(

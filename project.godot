@@ -19,3 +19,8 @@ gdscript/warnings/unsafe_property_access=2
 gdscript/warnings/unsafe_method_access=2
 gdscript/warnings/unsafe_cast=2
 gdscript/warnings/unsafe_call_argument=2
+
+[sqlite_orm]
+
+generator/output_dir="res://test/generated"
+generator/exclude=PackedStringArray("res://addons", "res://test/fixtures/invalid", "res://test/fixtures/migrations", "res://test/fixtures/codegen")

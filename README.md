@@ -13,6 +13,7 @@ Godot 4.7.
 - [Rows](#rows)
 - [Queries](#queries)
 - [Relations](#relations)
+- [Generated helpers](#generated-helpers)
 - [Transactions](#transactions)
 - [Errors](#errors)
 - [Migrations](#migrations)
@@ -238,6 +239,10 @@ db.select(Character).where("level", ">", 5).where_group(
 )
 ```
 
+The operators also exist as constants, so a typo is a parse error: `Db.EQ`, `Db.NE`, `Db.LT`,
+`Db.LTE`, `Db.GT`, `Db.GTE`, `Db.LIKE`, `Db.NOT_LIKE`, `Db.GLOB`, `Db.NOT_GLOB`, `Db.IS`,
+`Db.IS_NOT`.
+
 Values are converted like fields (a `StringName`, an enum, a `bool`), and field names must be
 columns of the model, so neither can inject SQL. Without `order_by`, rows come in primary
 key order. `count()` ignores `order_by`, `limit` and `offset`. `to_sql()` shows the
@@ -354,6 +359,72 @@ A list that was never loaded is empty, and syncing it would delete every child. 
 read from the database refuses to sync a relation that was not loaded. Load it first, or
 call `hero.mark_loaded("gear")` after filling it by hand. Rows created in code have nothing
 to lose and sync freely.
+
+## Generated helpers
+
+Field and relation names in strings fail only when the query runs. The generator writes a
+typed helper class for every model, so a renamed field breaks the build instead:
+
+```gdscript
+var hero: Hero = HeroDb.find(db, id)
+
+var top: Array[Character] = (
+    CharacterDb.query(db)
+    .where_level(Db.GTE, 10)
+    .where_weapon_id_null()
+    .order_by_level(Db.DESC)
+    .with_weapon()
+    .limit(5)
+    .all()
+)
+
+var saves: Array[Hero] = HeroDb.query(db).with_gear(GearDb.Rel.AFFIXES).all()
+db.update_all(Character).set_field(CharacterDb.Field.LEVEL, 1).all_rows().execute()
+db.save_tree(hero, [HeroDb.Rel.GEAR + "." + GearDb.Rel.AFFIXES])
+```
+
+For a model `Character`, `CharacterDb` holds:
+
+| Member                                                   | For                                      |
+| -------------------------------------------------------- | ---------------------------------------- |
+| `Field.LEVEL`, ...                                       | column names, as `StringName`            |
+| `Rel.WEAPON`, ...                                        | relation names, for paths                |
+| `find(db, key...)`                                       | the row, typed; one parameter per key field, typed like the key |
+| `query(db)`                                              | a `CharacterDb.Query`                    |
+| `where_<field>(op, value)`, `or_where_<field>(op, value)` | `value` typed like the field (an enum, `StringName`, ...) |
+| `where_<field>_in(values)`, `where_<field>_not_in(values)` | int, float, String and StringName fields |
+| `where_<field>_between(low, high)`                       | int and float fields                     |
+| `where_<field>_null()`, `or_where_<field>_null()`, `where_<field>_not_null()` | nullable fields   |
+| `order_by_<field>(descending)`, `pluck_<field>()`        | `pluck` returns a typed array for scalar fields |
+| `with_<relation>(nested)`                                | loads a relation; `nested` continues the path |
+| `where_group`, `or_where_group`, `where_raw`, `limit`, `offset` | as on `DbQuery`                 |
+| `all() -> Array[Character]`, `first() -> Character`, `count()`, `exists()`, `to_sql()` | typed results |
+| `db_query()`                                             | the `DbQuery` underneath, for anything else |
+
+### Running it
+
+```
+godot --headless --script res://addons/sqlite_orm/generator/generate.gd
+godot --headless --script res://addons/sqlite_orm/generator/generate.gd -- --check
+```
+
+It finds every `class_name` script that extends `DbModel`, compiles them together (an invalid
+model is reported the same way `Db.open` reports it), and writes one file per model. Files
+are only rewritten when their content changes; a file the generator made for a model that no
+longer exists is removed. The output passes the GDScript formatter and the strict warnings
+unchanged. Commit it: the exported game needs it.
+
+`--check` writes nothing and exits with 1 when a helper is missing, stale or orphaned. Put it
+in a pre-commit hook or CI, so a forgotten run cannot slip through.
+
+| Project setting                    | Default                          |
+| ---------------------------------- | -------------------------------- |
+| `sqlite_orm/generator/output_dir`  | `res://sqlite_orm_generated`     |
+| `sqlite_orm/generator/exclude`     | `["res://addons"]`: folders whose models are skipped |
+
+A model needs a `class_name` to get a helper, and its generated names must not clash: a field
+named `group` would make `where_group`, which the query already has. The generator reports
+such clashes instead of writing the file.
 
 ## Transactions
 

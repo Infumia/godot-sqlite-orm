@@ -39,6 +39,19 @@ enum ErrorKind {
 
 const ASC: bool = false
 const DESC: bool = true
+## Operators for where(), so a typo is a parse error rather than a failed query.
+const EQ: String = "="
+const NE: String = "!="
+const LT: String = "<"
+const LTE: String = "<="
+const GT: String = ">"
+const GTE: String = ">="
+const LIKE: String = "LIKE"
+const NOT_LIKE: String = "NOT LIKE"
+const GLOB: String = "GLOB"
+const NOT_GLOB: String = "NOT GLOB"
+const IS: String = "IS"
+const IS_NOT: String = "IS NOT"
 const MIGRATIONS_TABLE: String = "_migrations"
 
 var _sqlite: SQLite = null
