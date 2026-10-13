@@ -37,8 +37,9 @@ git = "https://github.com/Infumia/godot-sqlite-orm.git"
 rev = "<tag>"
 ```
 
-The addon does not bundle godot-sqlite; the project installs it next to the addon. Nothing
-needs enabling in the editor: the classes are available once the files are in `addons/`.
+The addon does not bundle godot-sqlite; the project installs it next to the addon. The
+classes work as soon as the files are in `addons/`. Enable **SQLite ORM** in Project Settings >
+Plugins to have the [model helpers](#generated-helpers) regenerated as you edit models.
 
 ## Models
 
@@ -403,6 +404,13 @@ For a model `Character`, `CharacterDb` holds:
 
 ### Running it
 
+In the editor, with the plugin enabled, saving a model regenerates the helpers, and
+**Project > Tools > Regenerate DB Helpers** runs it by hand (after deleting or renaming a
+model, for instance). It runs in a separate Godot process on a thread, so the editor does not
+stall; the result appears as a toast, and errors also in the Output panel.
+
+From the command line:
+
 ```
 godot --headless --script res://addons/sqlite_orm/generator/generate.gd
 godot --headless --script res://addons/sqlite_orm/generator/generate.gd -- --check
@@ -421,6 +429,7 @@ in a pre-commit hook or CI, so a forgotten run cannot slip through.
 | ---------------------------------- | -------------------------------- |
 | `sqlite_orm/generator/output_dir`  | `res://sqlite_orm_generated`     |
 | `sqlite_orm/generator/exclude`     | `["res://addons"]`: folders whose models are skipped |
+| `sqlite_orm/generator/run_on_save` | `true`: the plugin regenerates when a model is saved |
 
 A model needs a `class_name` to get a helper, and its generated names must not clash: a field
 named `group` would make `where_group`, which the query already has. The generator reports
