@@ -25,20 +25,21 @@ func test_command_line_check_passes() -> void:
     var output: Array = []
     var code: int = OS.execute(
         OS.get_executable_path(),
-        [
-            "--headless",
-            "--path",
-            ProjectSettings.globalize_path("res://"),
-            "--script",
-            "res://addons/sqlite_orm/generator/generate.gd",
-            "--",
-            "--check",
-        ],
+        DbCodegenProcess.arguments(true),
         output,
         true,
     )
-    assert_eq(code, 0, "\n".join(output))
-    assert_string_contains("\n".join(output), "helpers are up to date")
+    assert_eq(
+        code,
+        0,
+        "
+".join(output),
+    )
+    assert_string_contains(
+        "
+".join(output),
+        "helpers are up to date",
+    )
 
 
 func test_models_are_found_by_class_and_folder() -> void:
