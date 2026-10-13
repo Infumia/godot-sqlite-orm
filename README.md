@@ -73,6 +73,44 @@ Columns allow `NULL` unless marked `.not_null()`. A typed `int` cannot hold `nul
 column that can be `NULL` is declared as `Variant`; its type then comes from `_schema`
 (`.type(TYPE_INT)`, or the target field for a foreign key).
 
+### Unique constraints and indexes
+
+`.unique()` on a field makes that one column unique. `s.unique([...])` makes several
+columns unique together, and `s.index([...])` adds a plain index:
+
+```gdscript
+# person.gd
+class_name Person
+extends DbModel
+
+var id: int
+var name: String
+var surname: String
+var government_id: String
+
+
+static func _schema(s: SchemaBuilder) -> void:
+	s.table("people")
+	s.field("id").primary_key().auto_increment()  # a primary key is already unique
+	s.field("name").not_null()
+	s.field("surname").not_null()
+	s.field("government_id").not_null().unique()
+	s.unique(["name", "surname"])  # a second "Ada Lovelace" is rejected
+	s.index(["surname", "name"])
+```
+
+```sql
+CREATE UNIQUE INDEX people_name_surname_unique ON people(name, surname);
+CREATE INDEX people_surname_name_index ON people(surname, name);
+```
+
+- Both are created as indexes, not as constraints inside `CREATE TABLE`. SQLite cannot add
+  a constraint to an existing table, but it can add an index, so a migration can add or
+  drop them without rebuilding the table.
+- SQLite treats every `NULL` as different from every other value in a unique check: two
+  rows with `name = "Ada"` and `surname = NULL` are both allowed. Mark the columns of a
+  multi-column unique `.not_null()`.
+
 ### Opening a database
 
 ```gdscript
@@ -242,6 +280,18 @@ func up(m: Migrator) -> void:
 	m.add_column_raw("settings", "volume", TYPE_FLOAT, {"default": 1.0, "not_null": true})
 ```
 
+```gdscript
+# unique_person_name.gd
+extends DbMigration
+
+const VERSION := 4
+
+
+func up(m: Migrator) -> void:
+	m.add_unique(Person, ["name", "surname"])  # fails if duplicates already exist
+	m.drop_index(Person, ["surname", "name"])
+```
+
 All migrations are listed in one script, so they are found in exported builds too:
 
 ```gdscript
@@ -252,6 +302,7 @@ const LIST := [
 	preload("migrations/add_character_xp.gd"),
 	preload("migrations/rename_item_damage.gd"),
 	preload("migrations/add_settings_volume.gd"),
+	preload("migrations/unique_person_name.gd"),
 ]
 ```
 
