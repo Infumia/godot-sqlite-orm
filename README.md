@@ -380,7 +380,10 @@ var top: Array[Character] = (
 )
 
 var saves: Array[Hero] = HeroDb.query(db).with_gear(GearDb.Rel.AFFIXES).all()
-db.update_all(Character).set_field(CharacterDb.Field.LEVEL, 1).all_rows().execute()
+
+CharacterDb.update(db).set_level(1).set_weapon_id_null().where_level(Db.GT, 99).execute()
+CharacterDb.delete(db).where_level_between(1, 5).execute()
+
 db.save_tree(hero, [HeroDb.Rel.GEAR + "." + GearDb.Rel.AFFIXES])
 ```
 
@@ -392,15 +395,20 @@ For a model `Character`, `CharacterDb` holds:
 | `Rel.WEAPON`, ...                                        | relation names, for paths                |
 | `find(db, key...)`                                       | the row, typed; one parameter per key field, typed like the key |
 | `query(db)`                                              | a `CharacterDb.Query`                    |
+| `update(db)`, `delete(db)`                               | a `CharacterDb.Update` or `CharacterDb.Delete`: typed `update_all` / `delete_all` |
+| `set_<field>(value)`, `set_<field>_null()`               | on `Update`; `_null` for nullable fields |
 | `where_<field>(op, value)`, `or_where_<field>(op, value)` | `value` typed like the field (an enum, `StringName`, ...) |
-| `where_<field>_in(values)`, `where_<field>_not_in(values)` | int, float, String and StringName fields |
+| `where_<field>_in(values)`, `or_where_<field>_in(values)`, `where_<field>_not_in(values)` | int, float, String and StringName fields |
 | `where_<field>_between(low, high)`                       | int and float fields                     |
 | `where_<field>_null()`, `or_where_<field>_null()`, `where_<field>_not_null()` | nullable fields   |
 | `order_by_<field>(descending)`, `pluck_<field>()`        | `pluck` returns a typed array for scalar fields |
 | `with_<relation>(nested)`                                | loads a relation; `nested` continues the path |
 | `where_group`, `or_where_group`, `where_raw`, `limit`, `offset` | as on `DbQuery`                 |
 | `all() -> Array[Character]`, `first() -> Character`, `count()`, `exists()`, `to_sql()` | typed results |
-| `db_query()`                                             | the `DbQuery` underneath, for anything else |
+| `all_rows()`, `execute() -> int`                         | on `Update` and `Delete`, as on `DbUpdate` / `DbDelete` |
+| `db_query()`, `db_update()`, `db_delete()`               | the untyped builder underneath, for anything else |
+
+The condition methods are the same on `Query`, `Update` and `Delete`.
 
 ### Running it
 

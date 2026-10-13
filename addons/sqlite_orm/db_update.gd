@@ -62,6 +62,11 @@ func where_in(field: String, values: Array) -> DbUpdate:
     return self
 
 
+func or_where_in(field: String, values: Array) -> DbUpdate:
+    _where.or_where_in(field, values)
+    return self
+
+
 func where_not_in(field: String, values: Array) -> DbUpdate:
     _where.where_not_in(field, values)
     return self
@@ -69,6 +74,11 @@ func where_not_in(field: String, values: Array) -> DbUpdate:
 
 func where_null(field: String) -> DbUpdate:
     _where.where_null(field)
+    return self
+
+
+func or_where_null(field: String) -> DbUpdate:
+    _where.or_where_null(field)
     return self
 
 

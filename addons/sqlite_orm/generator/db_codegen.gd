@@ -24,7 +24,7 @@ const SCALAR_KINDS: Array[DbColumn.Kind] = [
     DbColumn.Kind.STRING,
     DbColumn.Kind.STRING_NAME,
 ]
-const GENERIC_METHODS: Array[String] = [
+const QUERY_METHODS: Array[String] = [
     "where_group",
     "or_where_group",
     "where_raw",
@@ -36,6 +36,22 @@ const GENERIC_METHODS: Array[String] = [
     "exists",
     "to_sql",
     "db_query",
+]
+const UPDATE_METHODS: Array[String] = [
+    "where_group",
+    "or_where_group",
+    "where_raw",
+    "all_rows",
+    "execute",
+    "db_update",
+]
+const DELETE_METHODS: Array[String] = [
+    "where_group",
+    "or_where_group",
+    "where_raw",
+    "all_rows",
+    "execute",
+    "db_delete",
 ]
 
 
@@ -187,6 +203,16 @@ static func generate(table: DbTable) -> String:
     out.append("    return Query.new(db.select(%s))" % model)
     out.append("")
     out.append("")
+    out.append("## Changes matching [%s] rows: set fields, add conditions, then execute()." % model)
+    out.append("static func update(db: Db) -> Update:")
+    out.append("    return Update.new(db.update_all(%s))" % model)
+    out.append("")
+    out.append("")
+    out.append("## Deletes matching [%s] rows: add conditions, then execute()." % model)
+    out.append("static func delete(db: Db) -> Delete:")
+    out.append("    return Delete.new(db.delete_all(%s))" % model)
+    out.append("")
+    out.append("")
     out.append("## Column names of [%s]." % model)
     out.append("class Field:")
     for column: DbColumn in table.columns:
@@ -200,9 +226,9 @@ static func generate(table: DbTable) -> String:
         out.append("class Rel:")
         for relation_name: String in table.relations:
             out.append('    const %s: String = "%s"' % [relation_name.to_upper(), relation_name])
-    out.append("")
-    out.append("")
     _emit_query(out, table, model)
+    _emit_update(out, table, model)
+    _emit_delete(out, table, model)
     return "\n".join(out) + "\n"
 
 
@@ -219,18 +245,41 @@ static func _emit_find(out: PackedStringArray, table: DbTable, model: String) ->
 
 
 static func _emit_query(out: PackedStringArray, table: DbTable, model: String) -> void:
-    var method: String = "    func "
-    out.append("## A query for [%s] rows, made by query()." % model)
-    out.append("class Query:")
-    out.append("    extends RefCounted")
-    out.append("")
-    out.append("    var _query: DbQuery")
-    out.append("")
-    out.append("")
-    out.append("    func _init(db_query: DbQuery) -> void:")
-    out.append("        _query = db_query")
+    _emit_class_head(
+        out,
+        "## A query for [%s] rows, made by query()." % model,
+        "Query",
+        "DbQuery",
+        "_query",
+    )
     for column: DbColumn in table.columns:
-        _emit_column_methods(out, column)
+        _emit_where_methods(out, column, "_query", "Query")
+        _blank(out)
+        _emit_signature(
+            out,
+            "    func order_by_" + column.name,
+            ["descending: bool = false"],
+            "Query",
+            "    ",
+        )
+        out.append("        _query.order_by(%s, descending)" % _field(column))
+        out.append("        return self")
+        _blank(out)
+        var value_type: String = _value_type(column)
+        if _is_scalar(column):
+            _emit_signature(
+                out,
+                "    func pluck_" + column.name,
+                [],
+                "Array[%s]" % value_type,
+                "    ",
+            )
+            out.append("        var values: Array[%s] = []" % value_type)
+            out.append("        values.assign(_query.pluck(%s))" % _field(column))
+            out.append("        return values")
+        else:
+            _emit_signature(out, "    func pluck_" + column.name, [], "Array", "    ")
+            out.append("        return _query.pluck(%s)" % _field(column))
     for relation_name: String in table.relations:
         var constant: String = "Rel." + relation_name.to_upper()
         _blank(out)
@@ -239,7 +288,7 @@ static func _emit_query(out: PackedStringArray, table: DbTable, model: String) -
         )
         _emit_signature(
             out,
-            method + "with_" + relation_name,
+            "    func with_" + relation_name,
             ["nested: String = \"\""],
             "Query",
             "    ",
@@ -249,110 +298,230 @@ static func _emit_query(out: PackedStringArray, table: DbTable, model: String) -
             % [constant, constant]
         )
         out.append("        return self")
-    var generic: Array[PackedStringArray] = [
-        ["func where_group(body: Callable) -> Query:", "_query.where_group(body)", "return self"],
+    _emit_conditions_passthrough(out, "_query", "Query")
+    _emit_methods(
+        out,
         [
-            "func or_where_group(body: Callable) -> Query:",
-            "_query.or_where_group(body)",
-            "return self",
+            ["func limit(row_count: int) -> Query:", "_query.limit(row_count)", "return self"],
+            ["func offset(row_count: int) -> Query:", "_query.offset(row_count)", "return self"],
+            [
+                "func all() -> Array[%s]:" % model,
+                "var rows: Array[%s] = []" % model,
+                "rows.assign(_query.all())",
+                "return rows",
+            ],
+            ["func first() -> %s:" % model, "return _query.first()"],
+            ["func count() -> int:", "return _query.count()"],
+            ["func exists() -> bool:", "return _query.exists()"],
+            ["func to_sql() -> String:", "return _query.to_sql()"],
+            [
+                "## The untyped query underneath, for what this class does not cover.",
+                "func db_query() -> DbQuery:",
+                "return _query",
+            ],
         ],
-        [
-            "func where_raw(sql: String, args: Array = []) -> Query:",
-            "_query.where_raw(sql, args)",
-            "return self",
-        ],
-        ["func limit(row_count: int) -> Query:", "_query.limit(row_count)", "return self"],
-        ["func offset(row_count: int) -> Query:", "_query.offset(row_count)", "return self"],
-        [
-            "func all() -> Array[%s]:" % model,
-            "var rows: Array[%s] = []" % model,
-            "rows.assign(_query.all())",
-            "return rows",
-        ],
-        ["func first() -> %s:" % model, "return _query.first()"],
-        ["func count() -> int:", "return _query.count()"],
-        ["func exists() -> bool:", "return _query.exists()"],
-        ["func to_sql() -> String:", "return _query.to_sql()"],
-        [
-            "## The untyped query underneath, for what this class does not cover.",
-            "func db_query() -> DbQuery:",
-            "return _query",
-        ],
-    ]
-    for lines: PackedStringArray in generic:
-        _blank(out)
-        var body_start: int = 0
-        while lines[body_start].begins_with("##"):
-            out.append("    " + lines[body_start])
-            body_start += 1
-        out.append("    " + lines[body_start])
-        for i: int in range(body_start + 1, lines.size()):
-            out.append("        " + lines[i])
+    )
 
 
-static func _emit_column_methods(out: PackedStringArray, column: DbColumn) -> void:
-    var name: String = column.name
-    var constant: String = "Field." + name.to_upper()
-    var value_type: String = _value_type(column)
-    var method: String = "    func "
-    for prefix: String in ["where_", "or_where_"]:
-        var call: String = "where" if prefix == "where_" else "or_where"
+static func _emit_update(out: PackedStringArray, table: DbTable, model: String) -> void:
+    _emit_class_head(
+        out,
+        "## Changes every matching [%s] row, made by update(). See [DbUpdate]." % model,
+        "Update",
+        "DbUpdate",
+        "_update",
+    )
+    for column: DbColumn in table.columns:
         _blank(out)
         _emit_signature(
             out,
-            method + prefix + name,
-            ["op: String", "value: " + value_type],
-            "Query",
+            "    func set_" + column.name,
+            ["value: " + _value_type(column)],
+            "Update",
             "    ",
         )
-        out.append("        _query.%s(%s, op, value)" % [call, constant])
+        out.append("        _update.set_field(%s, value)" % _field(column))
+        out.append("        return self")
+        if column.nullable:
+            _blank(out)
+            _emit_signature(out, "    func set_%s_null" % column.name, [], "Update", "    ")
+            out.append("        _update.set_field(%s, null)" % _field(column))
+            out.append("        return self")
+    for column: DbColumn in table.columns:
+        _emit_where_methods(out, column, "_update", "Update")
+    _emit_conditions_passthrough(out, "_update", "Update")
+    _emit_methods(
+        out,
+        [
+            [
+                "## Allows running without conditions, changing every row.",
+                "func all_rows() -> Update:",
+                "_update.all_rows()",
+                "return self",
+            ],
+            [
+                "## Runs the update. Returns how many rows changed, or -1 on failure.",
+                "func execute() -> int:",
+                "return _update.execute()",
+            ],
+            ["func db_update() -> DbUpdate:", "return _update"],
+        ],
+    )
+
+
+static func _emit_delete(out: PackedStringArray, table: DbTable, model: String) -> void:
+    _emit_class_head(
+        out,
+        "## Deletes every matching [%s] row, made by delete(). See [DbDelete]." % model,
+        "Delete",
+        "DbDelete",
+        "_delete",
+    )
+    for column: DbColumn in table.columns:
+        _emit_where_methods(out, column, "_delete", "Delete")
+    _emit_conditions_passthrough(out, "_delete", "Delete")
+    _emit_methods(
+        out,
+        [
+            [
+                "## Allows running without conditions, deleting every row.",
+                "func all_rows() -> Delete:",
+                "_delete.all_rows()",
+                "return self",
+            ],
+            [
+                "## Runs the delete. Returns how many rows were deleted, or -1 on failure.",
+                "func execute() -> int:",
+                "return _delete.execute()",
+            ],
+            ["func db_delete() -> DbDelete:", "return _delete"],
+        ],
+    )
+
+
+static func _emit_class_head(
+    out: PackedStringArray,
+    doc: String,
+    class_label: String,
+    wrapped_type: String,
+    member: String,
+) -> void:
+    _blank(out)
+    out.append(doc)
+    out.append("class %s:" % class_label)
+    out.append("    extends RefCounted")
+    out.append("")
+    out.append("    var %s: %s" % [member, wrapped_type])
+    out.append("")
+    out.append("")
+    out.append("    func _init(wrapped: %s) -> void:" % wrapped_type)
+    out.append("        %s = wrapped" % member)
+
+
+## The typed condition methods of one column, calling [param member] and returning
+## [param class_label].
+static func _emit_where_methods(
+    out: PackedStringArray,
+    column: DbColumn,
+    member: String,
+    class_label: String,
+) -> void:
+    var name: String = column.name
+    var constant: String = _field(column)
+    var value_type: String = _value_type(column)
+    for call: String in ["where", "or_where"]:
+        _blank(out)
+        _emit_signature(
+            out,
+            "    func %s_%s" % [call, name],
+            ["op: String", "value: " + value_type],
+            class_label,
+            "    ",
+        )
+        out.append("        %s.%s(%s, op, value)" % [member, call, constant])
         out.append("        return self")
     if _is_scalar(column):
-        for suffix: String in ["_in", "_not_in"]:
+        for pair: Array in [
+            ["where_%s_in", "where_in"],
+            ["or_where_%s_in", "or_where_in"],
+            ["where_%s_not_in", "where_not_in"],
+        ]:
             _blank(out)
             _emit_signature(
                 out,
-                method + "where_" + name + suffix,
+                "    func " + str(pair[0]) % name,
                 ["values: Array[%s]" % value_type],
-                "Query",
+                class_label,
                 "    ",
             )
-            out.append("        _query.where%s(%s, values)" % [suffix, constant])
+            out.append("        %s.%s(%s, values)" % [member, pair[1], constant])
             out.append("        return self")
     if column.kind == DbColumn.Kind.INT or column.kind == DbColumn.Kind.FLOAT:
         _blank(out)
         _emit_signature(
             out,
-            method + "where_" + name + "_between",
+            "    func where_%s_between" % name,
             ["low: " + value_type, "high: " + value_type],
-            "Query",
+            class_label,
             "    ",
         )
-        out.append("        _query.where_between(%s, low, high)" % constant)
+        out.append("        %s.where_between(%s, low, high)" % [member, constant])
         out.append("        return self")
     if column.nullable:
         for pair: Array in [
-            ["where_", "_null", "where_null"],
-            ["or_where_", "_null", "or_where_null"],
-            ["where_", "_not_null", "where_not_null"],
+            ["where_%s_null", "where_null"],
+            ["or_where_%s_null", "or_where_null"],
+            ["where_%s_not_null", "where_not_null"],
         ]:
             _blank(out)
-            _emit_signature(out, method + str(pair[0]) + name + str(pair[1]), [], "Query", "    ")
-            out.append("        _query.%s(%s)" % [pair[2], constant])
+            _emit_signature(out, "    func " + str(pair[0]) % name, [], class_label, "    ")
+            out.append("        %s.%s(%s)" % [member, pair[1], constant])
             out.append("        return self")
-    _blank(out)
-    _emit_signature(out, method + "order_by_" + name, ["descending: bool = false"], "Query", "    ")
-    out.append("        _query.order_by(%s, descending)" % constant)
-    out.append("        return self")
-    _blank(out)
-    if _is_scalar(column):
-        _emit_signature(out, method + "pluck_" + name, [], "Array[%s]" % value_type, "    ")
-        out.append("        var values: Array[%s] = []" % value_type)
-        out.append("        values.assign(_query.pluck(%s))" % constant)
-        out.append("        return values")
-    else:
-        _emit_signature(out, method + "pluck_" + name, [], "Array", "    ")
-        out.append("        return _query.pluck(%s)" % constant)
+
+
+static func _emit_conditions_passthrough(
+    out: PackedStringArray,
+    member: String,
+    class_label: String,
+) -> void:
+    _emit_methods(
+        out,
+        [
+            [
+                "func where_group(body: Callable) -> %s:" % class_label,
+                "%s.where_group(body)" % member,
+                "return self",
+            ],
+            [
+                "func or_where_group(body: Callable) -> %s:" % class_label,
+                "%s.or_where_group(body)" % member,
+                "return self",
+            ],
+            [
+                "func where_raw(sql: String, args: Array = []) -> %s:" % class_label,
+                "%s.where_raw(sql, args)" % member,
+                "return self",
+            ],
+        ],
+    )
+
+
+## Writes methods given as [doc lines..., signature, body lines...], inside a class.
+static func _emit_methods(out: PackedStringArray, methods: Array) -> void:
+    for item: Variant in methods:
+        var lines: Array = item
+        _blank(out)
+        var body_start: int = 0
+        while str(lines[body_start]).begins_with("##"):
+            out.append("    " + str(lines[body_start]))
+            body_start += 1
+        out.append("    " + str(lines[body_start]))
+        for i: int in range(body_start + 1, lines.size()):
+            out.append("        " + str(lines[i]))
+
+
+static func _field(column: DbColumn) -> String:
+    return "Field." + column.name.to_upper()
 
 
 ## Writes "func name(params) -> type:", wrapping the parameters one per line when the
@@ -394,26 +563,30 @@ static func _is_scalar(column: DbColumn) -> bool:
     return column.kind in SCALAR_KINDS and value_type != "Variant"
 
 
-## Every Query method name must be unique, and no key field may be named "db".
+## Every method name of a generated class must be unique, and no key field may be named "db".
 static func _check_names(table: DbTable) -> String:
-    var seen: Dictionary = { }
-    for generic: String in GENERIC_METHODS:
-        seen[generic] = "the query itself"
     var clashes: PackedStringArray = []
+    var query_names: Dictionary = { }
+    var update_names: Dictionary = { }
+    var delete_names: Dictionary = { }
+    _claim(query_names, QUERY_METHODS, "the query itself", clashes, "Query")
+    _claim(update_names, UPDATE_METHODS, "the update itself", clashes, "Update")
+    _claim(delete_names, DELETE_METHODS, "the delete itself", clashes, "Delete")
     for column: DbColumn in table.columns:
-        for method: String in _column_methods(column):
-            if seen.has(method):
-                clashes.append(
-                    "'%s' (from field '%s' and %s)" % [method, column.name, seen[method]]
-                )
-            seen[method] = "field '%s'" % column.name
+        var source: String = "field '%s'" % column.name
+        var conditions: PackedStringArray = _where_method_names(column)
+        var query_own: PackedStringArray = conditions.duplicate()
+        query_own.append_array(["order_by_" + column.name, "pluck_" + column.name])
+        _claim(query_names, query_own, source, clashes, "Query")
+        var update_own: PackedStringArray = conditions.duplicate()
+        update_own.append("set_" + column.name)
+        if column.nullable:
+            update_own.append("set_%s_null" % column.name)
+        _claim(update_names, update_own, source, clashes, "Update")
+        _claim(delete_names, conditions, source, clashes, "Delete")
     for relation_name: String in table.relations:
-        var method: String = "with_" + relation_name
-        if seen.has(method):
-            clashes.append(
-                "'%s' (from relation '%s' and %s)" % [method, relation_name, seen[method]]
-            )
-        seen[method] = "relation '%s'" % relation_name
+        var source: String = "relation '%s'" % relation_name
+        _claim(query_names, ["with_" + relation_name], source, clashes, "Query")
     if "db" in table.primary_key:
         clashes.append("key field 'db' (clashes with find()'s db parameter)")
     if clashes.is_empty():
@@ -424,16 +597,27 @@ static func _check_names(table: DbTable) -> String:
     ]
 
 
-static func _column_methods(column: DbColumn) -> PackedStringArray:
+static func _claim(
+    taken: Dictionary,
+    names: PackedStringArray,
+    source: String,
+    clashes: PackedStringArray,
+    class_label: String,
+) -> void:
+    for method: String in names:
+        if taken.has(method):
+            clashes.append("%s.%s (from %s and %s)" % [class_label, method, source, taken[method]])
+        else:
+            taken[method] = source
+
+
+static func _where_method_names(column: DbColumn) -> PackedStringArray:
     var name: String = column.name
-    var methods: PackedStringArray = [
-        "where_" + name,
-        "or_where_" + name,
-        "order_by_" + name,
-        "pluck_" + name,
-    ]
+    var methods: PackedStringArray = ["where_" + name, "or_where_" + name]
     if _is_scalar(column):
-        methods.append_array(["where_%s_in" % name, "where_%s_not_in" % name])
+        methods.append_array(
+            ["where_%s_in" % name, "or_where_%s_in" % name, "where_%s_not_in" % name]
+        )
     if column.kind == DbColumn.Kind.INT or column.kind == DbColumn.Kind.FLOAT:
         methods.append("where_%s_between" % name)
     if column.nullable:

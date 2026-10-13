@@ -43,6 +43,11 @@ func where_in(field: String, values: Array) -> DbDelete:
     return self
 
 
+func or_where_in(field: String, values: Array) -> DbDelete:
+    _where.or_where_in(field, values)
+    return self
+
+
 func where_not_in(field: String, values: Array) -> DbDelete:
     _where.where_not_in(field, values)
     return self
@@ -50,6 +55,11 @@ func where_not_in(field: String, values: Array) -> DbDelete:
 
 func where_null(field: String) -> DbDelete:
     _where.where_null(field)
+    return self
+
+
+func or_where_null(field: String) -> DbDelete:
+    _where.or_where_null(field)
     return self
 
 
