@@ -1,0 +1,8 @@
+; Development project for the sqlite_orm addon. Games only take addons/sqlite_orm/.
+
+config_version=5
+
+[application]
+
+config/name="godot-sqlite-orm"
+config/features=PackedStringArray("4.7")

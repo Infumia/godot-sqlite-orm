@@ -1,0 +1,11 @@
+[project]
+godot = "4.7.2-stable"
+
+[[dependency]]
+name = "godot-sqlite"
+asset_store_asset = "tooshady4u/godot-sqlite:v4.9"
+strip_components = 0
+
+[[dependency]]
+name = "gut"
+asset_store_asset = "bitwes/gut:v9.7.1"

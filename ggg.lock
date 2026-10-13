@@ -1,0 +1,17 @@
+[[dependency]]
+name = "godot-sqlite"
+url = "https://fra1.digitaloceanspaces.com/asset-store-prod/assets/1915/addons.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=DO801FM46NRRLXQ9Q3M6%2F20261013%2Ffra1%2Fs3%2Faws4_request&X-Amz-Date=20261013T080503Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=1e62637b55069c8ffbc1d98a4deb57e1f8663112d25d093f4c8114f3ec21ee45"
+archive_sha = "95e91b72fe32984a84edaf6357a78753661f37a170cb362f5b948e0ede7c2cb0"
+publisher_slug = "tooshady4u"
+asset_slug = "godot-sqlite"
+release_id = 4886
+release_version = "v4.9"
+
+[[dependency]]
+name = "gut"
+url = "https://fra1.digitaloceanspaces.com/asset-store-prod/assets/840/Gut-9.7.1-2.zip?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=DO801FM46NRRLXQ9Q3M6%2F20261013%2Ffra1%2Fs3%2Faws4_request&X-Amz-Date=20261013T080508Z&X-Amz-Expires=600&X-Amz-SignedHeaders=host&X-Amz-Signature=4b623ee9f6e0aacf9c7fbe0b884e05707961be80b0d8f60e8372d7a5cc87450f"
+archive_sha = "14969aa46adc84aa08cdd21b9f6d1a64addd92ae60b36f02d0521ed305aa4086"
+publisher_slug = "bitwes"
+asset_slug = "gut"
+release_id = 3625
+release_version = "v9.7.1"

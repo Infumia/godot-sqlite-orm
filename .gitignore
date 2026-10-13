@@ -1,0 +1,14 @@
+# Godot editor and import cache
+.godot/
+
+# Installed by `ggg sync`; the addon itself is tracked below
+.ggg.state
+addons/*
+!addons/sqlite_orm/
+
+# IDEs and OS files
+.idea/
+.vscode/
+Thumbs.db
+desktop.ini
+.DS_Store
