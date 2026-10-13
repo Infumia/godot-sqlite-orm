@@ -52,6 +52,24 @@ func test_models_are_found_by_class_and_folder() -> void:
     assert_has(everything, MgPlayerV1)
 
 
+func test_models_are_chosen_from_the_class_list_alone() -> void:
+    var classes: Array[Dictionary] = [
+        _class_entry(&"DbModel", &"RefCounted", "res://addons/sqlite_orm/db_model.gd"),
+        _class_entry(&"Hero", &"DbModel", "res://game/hero.gd"),
+        _class_entry(&"BaseRow", &"DbModel", "res://game/base_row.gd"),
+        _class_entry(&"Ally", &"BaseRow", "res://game/ally.gd"),
+        # Paths that do not exist: choosing them would fail if anything were loaded.
+        _class_entry(&"Events", &"Node", "res://game/missing_events.gd"),
+        _class_entry(&"Loop", &"Loop", "res://game/missing_loop.gd"),
+        _class_entry(&"Mod", &"DbModel", "res://mods/mod.gd"),
+        { "class": &"CsRow", "base": &"DbModel", "language": &"C#", "path": "res://game/r.cs" },
+    ]
+    assert_eq(
+        DbCodegen.model_paths(classes, PackedStringArray(["res://addons", "res://mods"])),
+        PackedStringArray(["res://game/ally.gd", "res://game/base_row.gd", "res://game/hero.gd"]),
+    )
+
+
 func test_check_mode_reports_missing_stale_and_orphaned_files() -> void:
     var output: String = _use_scratch_output()
     var model_count: int = DbCodegen.find_models(DbCodegen.exclude_setting()).size()
@@ -393,3 +411,7 @@ func _use_scratch_output() -> String:
     var output: String = scratch_path("generated")
     ProjectSettings.set_setting(DbCodegen.OUTPUT_DIR_SETTING, output)
     return output
+
+
+func _class_entry(name: StringName, base: StringName, path: String) -> Dictionary:
+    return { "class": name, "base": base, "language": &"GDScript", "path": path }

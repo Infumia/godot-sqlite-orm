@@ -7,6 +7,10 @@ config_version=5
 config/name="godot-sqlite-orm"
 config/features=PackedStringArray("4.7")
 
+[autoload]
+
+FxGameEvents="*res://test/fixtures/autoload/fx_game_events.gd"
+
 [debug]
 
 gdscript/warnings/directory_rules={

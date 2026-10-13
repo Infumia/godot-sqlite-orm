@@ -99,3 +99,10 @@ func test_run_on_save_setting_defaults_to_true() -> void:
     ProjectSettings.set_setting(DbCodegen.RUN_ON_SAVE_SETTING, false)
     assert_false(DbCodegen.run_on_save_setting())
     ProjectSettings.set_setting(DbCodegen.RUN_ON_SAVE_SETTING, saved)
+
+
+func test_the_child_process_loads_no_script_that_is_not_a_model() -> void:
+    # FxEventListener names an autoload, which a command-line run does not have.
+    var result: DbCodegenProcess.Result = DbCodegenProcess.run(true)
+    assert_true(result.ok(), result.output)
+    assert_false(result.output.contains("SCRIPT ERROR"), result.output)

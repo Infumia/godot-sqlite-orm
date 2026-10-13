@@ -140,23 +140,45 @@ static func is_model_script(path: String) -> bool:
 
 
 ## Every script with a class_name that extends DbModel, outside [param exclude], by path.
+## Only those scripts are loaded: a game script that names an autoload does not compile in a
+## command-line run, which has no autoloads.
 static func find_models(exclude: PackedStringArray) -> Array[GDScript]:
-    var paths: PackedStringArray = []
-    for entry: Dictionary in ProjectSettings.get_global_class_list():
-        var path: String = entry["path"]
-        var language: String = str(entry.get("language", ""))
-        if language != "GDScript" or _is_excluded(path, exclude):
-            continue
-        paths.append(path)
-    paths.sort()
     var models: Array[GDScript] = []
-    for path: String in paths:
+    for path: String in model_paths(ProjectSettings.get_global_class_list(), exclude):
         var loaded: Resource = load(path)
         if loaded is GDScript:
             var script: GDScript = loaded
             if _extends_model(script):
                 models.append(script)
     return models
+
+
+## The paths of the GDScript classes in [param classes] (entries of
+## [method ProjectSettings.get_global_class_list]) whose bases lead to DbModel, outside
+## [param exclude], sorted. Reads only the class list. Each entry's base is the nearest named
+## class above it, so a model below an unnamed base script is found too.
+static func model_paths(
+    classes: Array[Dictionary],
+    exclude: PackedStringArray,
+) -> PackedStringArray:
+    var bases: Dictionary[StringName, StringName] = { }
+    for entry: Dictionary in classes:
+        bases[StringName(str(entry["class"]))] = StringName(str(entry.get("base", "")))
+    var paths: PackedStringArray = []
+    for entry: Dictionary in classes:
+        var path: String = entry["path"]
+        var language: String = str(entry.get("language", ""))
+        if language != "GDScript" or _is_excluded(path, exclude):
+            continue
+        var base: StringName = bases.get(StringName(str(entry["class"])), &"")
+        var seen: Dictionary[StringName, bool] = { }
+        while bases.has(base) and base != &"DbModel" and not seen.has(base):
+            seen[base] = true
+            base = bases[base]
+        if base == &"DbModel":
+            paths.append(path)
+    paths.sort()
+    return paths
 
 
 ## The source of every model's file, keyed by path, and the problems found:
