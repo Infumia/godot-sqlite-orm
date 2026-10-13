@@ -1,6 +1,6 @@
 # godot-sqlite-orm
 
-A Godot 4 addon for local (offline) game data on SQLite: models declared in GDScript,
+A Godot 4 addon for SQLite: models declared in GDScript,
 tables created from them, a method-based query builder, and versioned migrations.
 Foreign keys are always enforced.
 
