@@ -55,7 +55,8 @@ extends DbModel
 var id: int
 var name: String
 var level: int = 1
-var weapon_id: Variant  # int or null
+var weapon_id: Variant  # the column: int or null
+var weapon: Item  # the relation: filled only when loaded
 
 
 static func _schema(s: SchemaBuilder) -> void:
@@ -63,13 +64,13 @@ static func _schema(s: SchemaBuilder) -> void:
 	s.field("id").primary_key().auto_increment()
 	s.field("name").not_null()
 	s.field("level").not_null().check(">= 1")
-	s.field("weapon_id").type(TYPE_INT).nullable().references(Item, "id").on_delete_set_null()
+	s.belongs_to("weapon", Item).nullable().on_delete_set_null()
 ```
 
 Column types come from the `var` types: `int` → `INTEGER`, `float` → `REAL`,
 `String` → `TEXT`, `bool` → `INTEGER` (0/1), `PackedByteArray` → `BLOB`.
-A typed `int` cannot hold `null`, so a nullable column is declared as `Variant` and
-gets its type from `.type()` in `_schema`.
+A typed `int` cannot hold `null`, so a nullable column is declared as `Variant`; its
+type then comes from `_schema` (`.type(TYPE_INT)`, or the target key for a relation).
 
 ### Opening a database
 
@@ -91,7 +92,7 @@ db.insert(sword)  # sword.id is set from the new row
 
 var hero := Character.new()
 hero.name = "Aria"
-hero.weapon_id = sword.id
+hero.weapon = sword  # or hero.weapon_id = sword.id
 db.insert(hero)
 
 hero.level += 1
@@ -99,7 +100,7 @@ db.update(hero)  # by primary key
 
 var found := db.find(Character, hero.id) as Character  # null when there is no such row
 
-db.delete(sword)  # hero.weapon_id becomes null in the database (ON DELETE SET NULL)
+db.delete(sword)  # the row's weapon_id becomes null (ON DELETE SET NULL)
 ```
 
 ### Queries
@@ -139,6 +140,46 @@ var rows: Array = db.raw(
 	"SELECT c.name, i.name AS weapon FROM characters c JOIN items i ON i.id = c.weapon_id WHERE i.damage > ?",
 	[10],
 )
+```
+
+### Relations
+
+`belongs_to("weapon", Item)` declares the `weapon_id` column and its foreign key, so
+`weapon_id` is not listed with `s.field`:
+
+```sql
+weapon_id INTEGER REFERENCES items(id) ON DELETE SET NULL
+```
+
+| Part        | Comes from                     | Change with           |
+| ----------- | ------------------------------ | --------------------- |
+| Column name | relation name + `_id`          | `.column("name")`     |
+| Target      | `Item`'s table and primary key | `.to("field")`        |
+| Column type | the target field's type        | —                     |
+| `NOT NULL`  | added unless `.nullable()`     | —                     |
+| `ON DELETE` | `.on_delete_*()`               | `cascade`, `restrict` |
+
+```gdscript
+s.belongs_to("weapon", Item).column("equipped_item_id").to("uuid").on_delete_cascade()
+# equipped_item_id TEXT REFERENCES items(uuid) ON DELETE CASCADE
+```
+
+- The model needs a `var` for the column (`weapon_id`) and a typed `var` for the
+  relation (`weapon: Item`). The relation is not a column and is never written.
+- The column gets an index, since SQLite does not index foreign keys by itself.
+- `Db.open` reports an error when a `var` is missing or the column is also declared
+  with `s.field`.
+
+Relations are never loaded on their own; ask for them:
+
+```gdscript
+# One extra query for all the weapons, not one per character
+var armed: Array = db.select(Character).with("weapon").all()
+
+db.load(hero, "weapon")  # fills hero.weapon for one row
+
+hero.weapon = sword
+db.update(hero)  # weapon_id is taken from sword.id; an unsaved sword is an error
 ```
 
 ### Transactions
